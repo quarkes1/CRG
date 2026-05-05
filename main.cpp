@@ -14,6 +14,7 @@
 
 #include "mainf.h"
 #include "global.h"
+#include "visual.h"
 
 #define IS_DOWN(key) ((GetAsyncKeyState(key) & 0x8000) != 0)  //用于监听按键信息 ->bool
 
@@ -703,6 +704,8 @@ void RENDER()//游戏进程中所有过程渲染
 int main(){
     init();
     load_chart("test.json");
+    ArcOpenRender();
+  
     while (true){
         drawChar(WIDTH-1,HEIGHT-1,'F',White);
         RENDER();
