@@ -11,6 +11,8 @@
 #include <string>
 #include <sstream>
 #include <random>
+#include "global.h"
+#include "visual.h"
 #include "json.hpp"
 #include "miniaudio.h"
 
@@ -34,5 +36,6 @@ void drawString(int _abs_pos_x, int _abs_pos_y, const char* _str, WORD _color);
 void scoreCal(bool _missed,bool _combo);
 void empty(const int _x1,const int _x2 ,const int _y1, const int _y2);
 void spEffectRender(long long _time);
+void playInfoRender();
 
 void RENDER();

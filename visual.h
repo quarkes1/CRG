@@ -1,4 +1,8 @@
+// CRG (CLI Rhythem Game) project
 
+/**
+  * 
+*/
 
 #pragma once
 

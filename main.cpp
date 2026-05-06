@@ -13,8 +13,6 @@
 #pragma execution_character_set("gbk")
 
 #include "mainf.h"
-#include "global.h"
-#include "visual.h"
 
 #define IS_DOWN(key) ((GetAsyncKeyState(key) & 0x8000) != 0)  //用于监听按键信息 ->bool
 
@@ -61,7 +59,7 @@ struct bar_line
     long long hitTime;  // 落到判定线的时间（毫秒）
 };
 
-static std::vector<bar_line> BARLINE;
+std::vector<bar_line> BARLINE;
 
 class bar_lines//绘制小节线
 {
@@ -96,7 +94,7 @@ struct note
     int judge{0}; //0 miss; 1 far ; 2 pure ; 3 critical pure
 };
 
-static std::vector <note> NOTE;
+std::vector <note> NOTE;
 
 class notes// 绘制note
 {
@@ -190,7 +188,7 @@ struct chartinfo
     double proc{0};//进度
 };
 
-static chartinfo CHARTINFO{};//记录当前谱面的信息，需要结束后清空
+chartinfo CHARTINFO{};//记录当前谱面的信息，需要结束后清空
 
 struct particle
 {
@@ -202,7 +200,7 @@ struct particle
     bool activ{false};
 };
 
-static std::vector <particle> PARTICLE;//记录当前谱面生成的粒子，需要结束时清空
+std::vector <particle> PARTICLE;//记录当前谱面生成的粒子，需要结束时清空
 
 void empty(const int _x1,const int _x2 ,const int _y1, const int _y2)//清空指定区域内可能的特效
 {   
@@ -660,6 +658,7 @@ void init()
     gameStart = getNowMs();
 }
 
+/*
 void test()//note测试
 {
     BARLINE.push_back({500});
@@ -681,7 +680,7 @@ void test()//note测试
     NOTE.push_back({3, 8000 , 9800 , 1}) ;
     NOTE.push_back({1, 9000 , 0 , 0}) ;
 }
-
+*/
 
 void RENDER()//游戏进程中所有过程渲染
 {       

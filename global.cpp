@@ -1,7 +1,10 @@
+// CRG (CLI Rhythem Game) project
 
+/**
+  * 
+*/
 
 #include "global.h"
-
 
 const int MARGIN_L = 20;
 const int MARGIN_R = 20;

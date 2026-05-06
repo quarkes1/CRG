@@ -1,3 +1,9 @@
+// CRG (CLI Rhythem Game) project
+
+/**
+  *
+  * 此文件提供所有全局变量的api
+*/
 
 #pragma once
 #pragma execution_character_set("gbk")
