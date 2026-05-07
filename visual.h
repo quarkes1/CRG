@@ -12,4 +12,4 @@
 #include "global.h"
 #include "mainf.h"
 
-void ArcOpenRender();
+void gameOpenRender();

@@ -38,4 +38,27 @@ void empty(const int _x1,const int _x2 ,const int _y1, const int _y2);
 void spEffectRender(long long _time);
 void playInfoRender();
 
-void RENDER();
+void PLAYRENDER();
+
+void playChart(const std::string& _path);
+
+struct chartinfo
+{
+    std::string title;
+    std::string soundtrack; 
+    std::string version; 
+    std::string artist;
+    int maxcount{0};//物量
+
+    int maxcombo{0};
+    long int score{0};
+    int combo{0};
+    int critical_perfect{0};
+    int perfect{0};
+    int _far{0};
+    int miss{0}; 
+
+    double proc{0};//进度
+};
+
+extern chartinfo CHARTINFO;

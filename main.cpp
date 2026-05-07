@@ -10,7 +10,7 @@
   * 所有形参以 __val 或 _val 的形式命名
   * 所有容器和常量名使用全大写
 */
-#pragma execution_character_set("gbk")
+
 
 #include "mainf.h"
 
@@ -167,25 +167,6 @@ public:
             }         
         }
     }
-};
-
-struct chartinfo
-{
-    std::string title;
-    std::string soundtrack; 
-    std::string version; 
-    std::string artist;
-    int maxcount{0};//物量
-
-    int maxcombo{0};
-    long int score{0};
-    int combo{0};
-    int critical_perfect{0};
-    int perfect{0};
-    int _far{0};
-    int miss{0}; 
-
-    double proc{0};//进度
 };
 
 chartinfo CHARTINFO{};//记录当前谱面的信息，需要结束后清空
@@ -649,8 +630,9 @@ void load_chart(const std::string& _path) //加载json谱面-> vector<note>,vect
 }
 //==========================================================================
 
-void init()
+void init()//全局初始化
 {   
+    system("chcp 65001");
     srand(time(NULL));
     SetConsoleOutputCP(65001);
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -682,7 +664,7 @@ void test()//note测试
 }
 */
 
-void RENDER()//游戏进程中所有过程渲染
+void PLAYRENDER()//游戏进程中所有过程渲染
 {       
         clearBuffer();
         lines line;
@@ -700,14 +682,21 @@ void RENDER()//游戏进程中所有过程渲染
         render();
 }
 
-int main(){
-    init();
-    load_chart("test.json");
-    ArcOpenRender();
-  
+
+void playChart(const std::string& _path)//此函数完成所有播放工作。包括开始结束动画，分数显示。容器清空等。
+{
+    load_chart(_path);//调用时会清空容器
+    gameOpenRender();
     while (true){
-        drawChar(WIDTH-1,HEIGHT-1,'F',White);
-        RENDER();
+        PLAYRENDER();
         Sleep(8);
     }
+
 }
+
+
+int main(){
+    init();
+    playChart("test.json");
+}
+    

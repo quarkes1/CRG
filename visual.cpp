@@ -13,6 +13,27 @@ inline int round2int(double val) //这个是用来避免后面截断的误差加
     return (val >= 0) ? (int)(val + 0.5) : (int)(val - 0.5);
 }
 
+inline void drawInfo()//供gameOpenRender调用,绘制中央的谱面信息
+{   
+    const double Y = MARGIN_T + RAIl_HEIGHT + 5;
+    const int center_x = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
+    const int center_y = round2int(Y/2);
+
+    int x_bias = 12;
+    int y_bias = 6;
+    int start_X = center_x - x_bias;
+    int end_X = center_x + x_bias;
+    int start_Y = center_y - y_bias;
+    int end_Y = center_y + y_bias;
+
+    //清除区域
+    for (int x = start_X ; x<= end_X ;x++){
+        for (int y = start_Y ;y <end_Y ; y++)
+            drawChar(x, y, ' ', White);
+    }
+
+}
+
 inline void lineRender()
 {       
         WORD color = Green ;
@@ -42,7 +63,7 @@ struct line
 
 std::vector<line>LINE{};
 
-void ArcOpenRender()//绘制开始和结束时的效果
+void gameOpenRender()//绘制开始和结束时的效果
 {   
     WORD color = White;
     long long starttime = getNowMs();
@@ -106,6 +127,8 @@ void ArcOpenRender()//绘制开始和结束时的效果
               }
           }        
       }
+      if (now - starttime >= (duration/5) *2)
+        drawInfo();
       render();
       Sleep(1);
    }
