@@ -88,7 +88,7 @@ const std::vector<std::string> TC = {
     "                                       /_/                   "
 };
 
-void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _asc , WORD _color = White)
+void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _asc , WORD _color )
 {
     for (int y = 0; y < _asc.size(); ++y) {
         const std::string& line = _asc[y];
@@ -102,14 +102,11 @@ void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _as
     }
 }
 
-/*
+
 int main(){
     init();
-    while (true){
-        clearBuffer();
-        drawAscii();
-        Sleep(10);
-        render();
-    }
+    load_chart("test.json");
+    gameOverRender();
+    Sleep(10000);
 }
-    */
+    

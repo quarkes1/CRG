@@ -40,10 +40,10 @@ inline void showScore()//供gameOverRender调用，绘制分数
     const int center_x = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
     const int center_y = round2int((MARGIN_T + RAIl_HEIGHT + 5)/2.0); 
     int x_bias = 10;
-    int y_bias = 10;
+    int y_bias = 5;
 
     int start_x = center_x - x_bias;
-    int start_y = center_y + y_bias;
+    int start_y = center_y - y_bias;
     
     int rank{0};
     if (CHARTINFO.score >= 9900000) rank = 0;
@@ -69,7 +69,7 @@ inline void showScore()//供gameOverRender调用，绘制分数
     }
 
 
-    int x = center_x -5 ; int y  = MARGIN_T + RAIl_HEIGHT;
+    int x = center_x -6 ; int y  = MARGIN_T + RAIl_HEIGHT - 3;
 
     std::stringstream ss0;
     ss0<< CHARTINFO.critical_perfect;
@@ -77,12 +77,12 @@ inline void showScore()//供gameOverRender调用，绘制分数
 
     std::stringstream ss1;
     ss1 << std::setw(8) << std::setfill('0') << CHARTINFO.score;
-    std::string scre = ss1.str() + " +" + cp;
+    std::string scre = ss1.str() ;
     const char *score = scre.c_str();
 
     std::stringstream ss2;
     ss2<< CHARTINFO.perfect;
-    std::string p = ss2.str();
+    std::string p = ss2.str()+ " +" + cp;
     const char *pure = p.c_str();
 
     std::stringstream ss3;
@@ -101,11 +101,11 @@ inline void showScore()//供gameOverRender调用，绘制分数
     std::string cmb = ss5.str();
     const char *rec = cmb.c_str();
 
-    drawString(center_x - strlen(score)/2 , y+2 , score ,color );
-    drawString(x, y -2 ,"Pure",Blue); drawString(x+ 8 , y-2 , pure , White); 
-    drawString(x, y -3 ,"Far",Yellow); drawString(x+ 8 , y-3 , _far , White);
-    drawString(x, y -4 ,"Lost",Red); drawString(x+ 8 , y-4 , lost , Red);
-    drawString(x, y -5 ,"Max Recall",White); drawString(x+ 8 , y-5 ,rec , White);
+    drawString(center_x - strlen(score)/2 , y-2 , score ,color );
+    drawString(x, y,"Pure",Blue); drawString(x+ 11 , y , pure , White); 
+    drawString(x, y+1 ,"Far",Yellow); drawString(x+ 11 , y+1 , _far , White);
+    drawString(x, y +2,"Lost",Red); drawString(x+ 11, y+2, lost , White);
+    drawString(x, y +3,"Max Recall",White); drawString(x+ 11 , y+3 ,rec , White);
 
 }
 
@@ -346,6 +346,7 @@ void gameOverRender()//绘制结束时的效果
       render();
       Sleep(1);
    }
+   clearBuffer();
    showScore();
    render();
 }

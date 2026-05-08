@@ -1,10 +1,12 @@
 #pragma once
 
-#include "mainf.h"  
+#include "mainf.h"
+#include "global.h"
+#include "visual.h"  
 #include <string>
 #include <vector>
 
-void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _asc , WORD _color = White);
+void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _asc , WORD _color );
 
 extern const std::vector<std::string> EXp;
 extern const std::vector<std::string> EX ;

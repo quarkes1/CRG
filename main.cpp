@@ -42,7 +42,7 @@ public:
         for (int x = MARGIN_L; x <= BORDER; x ++) drawChar(x , MARGIN_T + RAIl_HEIGHT+2 , '-',color);
     }   
 };
-
+lines line;//仅作为实例化供调用函数使用
 
 struct BPM 
 {
@@ -81,7 +81,7 @@ public:
         }
     }
 };
-
+bar_lines bl; //仅作为实例化供调用函数使用
 
 struct note
 {
@@ -104,7 +104,7 @@ private:
 public:
     void judge_render(int _judge, int _x ,int _y, WORD _purecolor , WORD _farcolor, WORD _misscolor){
         switch (_judge){
-                    case 0: drawString(_x, _y, "Miss", _misscolor); break;
+                    case 0: drawString(_x, _y, "Lost", _misscolor); break;
                     case 1: drawString(_x, _y, "Far",  _farcolor);  break;
                     case 2: case 3: drawString(_x, _y, "Pure", _purecolor); break;
                 }
@@ -166,10 +166,9 @@ public:
                     judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Red);
             }         
         }
-
-        CHARTINFO.is_over = true;
     }
 };
+notes nt; //仅作为实例化供调用函数使用
 
 chartinfo CHARTINFO{};//记录当前谱面的信息，需要结束后清空
 
@@ -666,16 +665,16 @@ void test()//note测试
 }
 */
 
-void PLAYRENDER()//游戏进程中所有过程渲染
+void PLAYRENDER()//游戏进程中每一帧所有过程渲染
 {       
         clearBuffer();
-        lines line;
+
         long long now = getGameTime();
+
         judge(now);
+
         line.render();
-        bar_lines bl;
         bl.render(now);
-        notes nt;
         nt.render(now);
         
         spEffectRender(now);
@@ -696,12 +695,13 @@ void playChart(const std::string& _path)//此函数完成所有播放工作。�
     }
     Sleep(2000);
     gameOverRender();
-    CHARTINFO = chartinfo ();
+
+    CHARTINFO = chartinfo (); //清空CHARTINFO
 }
 
-
+/*
 int main(){
     init();
     playChart("test.json");
 }
-    
+    */
