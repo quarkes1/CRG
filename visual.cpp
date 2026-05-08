@@ -13,7 +13,7 @@ inline int round2int(double val) //这个是用来避免后面截断的误差加
     return (val >= 0) ? (int)(val + 0.5) : (int)(val - 0.5);
 }
 
-inline void drawInfo()//供gameOpenRender调用,绘制中央的谱面信息
+inline void drawInfo()//供gameOpenRender调用,绘制中央的信息
 {   
     const double Y = MARGIN_T + RAIl_HEIGHT + 5;
     const int center_x = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
@@ -31,6 +31,81 @@ inline void drawInfo()//供gameOpenRender调用,绘制中央的谱面信息
         for (int y = start_Y ;y <end_Y ; y++)
             drawChar(x, y, ' ', White);
     }
+
+}
+
+inline void showScore()//供gameOverRender调用，绘制分数
+{   
+    WORD color = White;
+    const int center_x = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
+    const int center_y = round2int((MARGIN_T + RAIl_HEIGHT + 5)/2.0); 
+    int x_bias = 10;
+    int y_bias = 10;
+
+    int start_x = center_x - x_bias;
+    int start_y = center_y + y_bias;
+    
+    int rank{0};
+    if (CHARTINFO.score >= 9900000) rank = 0;
+    else if (CHARTINFO.score >= 9800000) rank =1;
+    else if (CHARTINFO.score >= 9500000) rank =2;
+    else if (CHARTINFO.score >= 9200000) rank =3;
+    else if (CHARTINFO.score >= 8900000) rank =4;
+    else if (CHARTINFO.score >= 8600000) rank =5;
+    else rank =6;
+
+
+    if (CHARTINFO.tracklost) drawAscii(2 ,2 , TL,White);
+    else drawAscii(2,2,TC, White);
+
+    switch(rank){
+        case 0: drawAscii(start_x,start_y,EXp, color);
+        case 1: drawAscii(start_x,start_y,EX, color);
+        case 2: drawAscii(start_x,start_y,AA, color);
+        case 3: drawAscii(start_x,start_y,A, color);
+        case 4: drawAscii(start_x,start_y,B, color);
+        case 5: drawAscii(start_x,start_y,C, color);
+        case 6: drawAscii(start_x,start_y,D, color);
+    }
+
+
+    int x = center_x -5 ; int y  = MARGIN_T + RAIl_HEIGHT;
+
+    std::stringstream ss0;
+    ss0<< CHARTINFO.critical_perfect;
+    std::string cp = ss0.str();
+
+    std::stringstream ss1;
+    ss1 << std::setw(8) << std::setfill('0') << CHARTINFO.score;
+    std::string scre = ss1.str() + " +" + cp;
+    const char *score = scre.c_str();
+
+    std::stringstream ss2;
+    ss2<< CHARTINFO.perfect;
+    std::string p = ss2.str();
+    const char *pure = p.c_str();
+
+    std::stringstream ss3;
+    ss3<<CHARTINFO._far;
+    std::string f= ss3.str();
+    const char *_far = f.c_str();
+
+    std::stringstream ss4;
+    ss4<<CHARTINFO.miss;
+    std::string l = ss4.str();
+    const char *lost = l.c_str();
+
+
+    std::stringstream ss5;
+    ss5<<CHARTINFO.maxcombo;
+    std::string cmb = ss5.str();
+    const char *rec = cmb.c_str();
+
+    drawString(center_x - strlen(score)/2 , y+2 , score ,color );
+    drawString(x, y -2 ,"Pure",Blue); drawString(x+ 8 , y-2 , pure , White); 
+    drawString(x, y -3 ,"Far",Yellow); drawString(x+ 8 , y-3 , _far , White);
+    drawString(x, y -4 ,"Lost",Red); drawString(x+ 8 , y-4 , lost , Red);
+    drawString(x, y -5 ,"Max Recall",White); drawString(x+ 8 , y-5 ,rec , White);
 
 }
 
@@ -53,6 +128,8 @@ inline void lineRender()
         for (int x = MARGIN_L; x <= BORDER; x ++) drawChar(x , MARGIN_T + RAIl_HEIGHT+2 , '-',color);
 }
 
+
+
 struct line
 {
     int len{100}; //此处给出很大的值，到时超出部分不画就是了
@@ -63,7 +140,7 @@ struct line
 
 std::vector<line>LINE{};
 
-void gameOpenRender()//绘制开始和结束时的效果
+void gameOpenRender()//绘制开始时的效果
 {   
     WORD color = White;
     long long starttime = getNowMs();
@@ -168,4 +245,107 @@ void gameOpenRender()//绘制开始和结束时的效果
   
 }
 
+void gameOverRender()//绘制结束时的效果
+{
+     
+    WORD color = White;
+    long long starttime = getNowMs();
+    char chartype {'#'};
+    double duration {500} ;//该动画持续的时间
+    double pause {3000};
+    const int center = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
+    const double Y = MARGIN_T + RAIl_HEIGHT + 5; 
+    const int BORDER_r = MARGIN_L + RAIL_WIDTH * 4 + 4 +35;
 
+    const int bias = 30 ;
+    const int subbias = 20 ; //转角偏移的程度
+    int c_X = center+bias ; //转角的x 坐标
+    int c_Y = (Y/5)*3 ; //转角的y 坐标
+
+    double v = center / duration;
+    
+    for (int y=1; y<c_Y ;y ++){
+        double ratio = 1 - y/double(c_Y);
+        line left{},right{};
+        left.is_left = true; right.is_left = false;
+        int x = c_X - round2int( subbias*ratio );
+        left.x = x ; right.x = x;
+        left.y = y; right.y =y;
+        LINE.push_back(left);
+        LINE.push_back(right);
+    }
+
+    for (int y=c_Y ; y<Y ; y++){
+        double ratio = (y-c_Y)/double(Y -c_Y);
+        line left{},right{};
+        left.is_left = true; right.is_left = false;
+        int x = c_X - round2int( subbias*ratio);
+        left.x = x ; right.x = x;
+        left.y = y; right.y =y;
+        LINE.push_back(left);
+        LINE.push_back(right);
+    }
+    
+    const long long beat { starttime + duration} ;
+    const long long endbeat {starttime + duration*2 + pause};
+
+    //合上
+    while (true){
+      long long now = getNowMs();
+      if (now>=beat) break;
+      clearBuffer();
+      for (line& l :LINE){
+          if (l.is_left){
+              int x_pos = l.x - round2int( (beat - now)* v );
+              for (int x = x_pos - l.len; x <= x_pos ;x++){
+                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                    drawChar(x , l.y ,chartype , color);
+              }
+          }
+          else{
+              int x_pos = l.x + round2int( (beat-now)*v );
+              for (int x = x_pos+ l.len ; x>= x_pos ; x--){
+                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                    drawChar(x , l.y ,chartype , color);
+              }
+          }        
+      }
+      render();
+      Sleep(1);
+   }
+
+
+   Sleep(pause);
+
+   long long t = getNowMs();
+   int eps = 300; //用来纠正程序运行时间的误差
+
+   //打开
+   while (true){
+      long long now = getNowMs();
+      if (now>=endbeat+eps) break;
+      clearBuffer();
+      showScore();
+      render();
+      for (line& l :LINE){
+          if (l.is_left){
+              int x_pos = l.x - round2int( duration*v) + round2int( (endbeat - now)*v );
+              for (int x = x_pos - l.len; x <=x_pos ;x++){
+                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                    drawChar(x , l.y ,chartype , color);
+              }
+          }
+          else{
+              int x_pos = l.x + round2int(duration*v) - round2int( (endbeat-now)*v );
+              for (int x = x_pos+ l.len ; x>= x_pos ; x--){
+                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                    drawChar(x , l.y ,chartype , color);
+              }
+          }        
+      }
+      render();
+      Sleep(1);
+   }
+   showScore();
+   render();
+}

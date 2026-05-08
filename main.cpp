@@ -150,7 +150,7 @@ public:
                 }
                 
                 if (nt.judged && _now < (nt.endbeat + _maxjudge_*5) )
-                     judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Magenta);
+                     judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Red);
                 
             }
             else//普通音符
@@ -161,11 +161,13 @@ public:
                         drawChar(x, y, char('A' + rand() % ('Z' -'A' + 1)) , color);
 
                 if (nt.clicked && abs(_now - nt.beat)<=_maxjudge_*5)
-                    judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Magenta);
+                    judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Red);
                 if ((_now - nt.beat)> _maxjudge_ && (_now - nt.beat) < _maxjudge_*4 && nt.judged && nt.judge ==0)
-                    judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Magenta);
+                    judge_render(nt.judge, left+1, judgeLineY+5 , Blue,Yellow,Red);
             }         
         }
+
+        CHARTINFO.is_over = true;
     }
 };
 
@@ -199,7 +201,7 @@ void playInfoRender()//在轨道右侧指定位置绘制游戏信息
     empty(BORDER,BORDER+width, MARGIN_T, MARGIN_T+height);
     
     std::stringstream ss;
-    ss << std::setw(9) << std::setfill('0') << CHARTINFO.score;
+    ss << std::setw(8) << std::setfill('0') << CHARTINFO.score;
     std::string scre = ss.str();
     const char *score = scre.c_str();
 
@@ -317,7 +319,7 @@ void scoreCal(bool _missed,bool _combo)//更新CHARTINFO的分数
     
     if (_combo) ++CHARTINFO.combo;
     if (CHARTINFO.combo>CHARTINFO.maxcombo) CHARTINFO.maxcombo=CHARTINFO.combo;
-    long int total = 100000000;
+    long int total = 10000000;
     double unit;
     if (CHARTINFO.maxcount)unit = total / double(CHARTINFO.maxcount);
         else unit = 1000;
@@ -688,10 +690,13 @@ void playChart(const std::string& _path)//此函数完成所有播放工作。�
     load_chart(_path);//调用时会清空容器
     gameOpenRender();
     while (true){
+        if (CHARTINFO.is_over) break;
         PLAYRENDER();
         Sleep(8);
     }
-
+    Sleep(2000);
+    gameOverRender();
+    CHARTINFO = chartinfo ();
 }
 
 

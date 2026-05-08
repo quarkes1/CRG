@@ -71,8 +71,24 @@ const std::vector<std::string> C = {
     "  `Y8bood8P'   "
 };
 
+const std::vector<std::string> TL = {
+    " ______             __     __            __ ",
+    "/_  __/______ _____/ /__  / /  ___  ___ / /_",
+    " / / / __/ _ `/ __/  '_/ / /__/ _ \\(_-</ __/",
+    "/_/ /_/  \\_,_/\\__/_/\\_\\ /____/\\___/___/\\__/",
+    "                                            "
+};
 
-void drawAscii(int _start_x = 10, int _start_y = 5, const std::vector<std::string> _asc , WORD _color = White)
+
+const std::vector<std::string> TC = {
+    " ______             __     _____                __    __     ",
+    "/_  __/______ _____/ /__  / ___/__  __ _  ___  / /__ / /____ ",
+    " / / / __/ _ `/ __/  '_/ / /__/ _ \\/  ' \\/ _ \\/ / -_) __/ -_)",
+    "/_/ /_/  \\_,_/\\__/_/\\_\\  \\___/\\___/_/_/_/ .__/_/\\__/\\__/\\__/ ",
+    "                                       /_/                   "
+};
+
+void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _asc , WORD _color = White)
 {
     for (int y = 0; y < _asc.size(); ++y) {
         const std::string& line = _asc[y];

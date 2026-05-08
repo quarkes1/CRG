@@ -58,6 +58,8 @@ struct chartinfo
     int _far{0};
     int miss{0}; 
 
+    bool is_over{false};
+    bool tracklost{false};
     double proc{0};//进度
 };
 
