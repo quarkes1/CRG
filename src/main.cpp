@@ -59,7 +59,7 @@ std::vector<BPM> BPMlist;
 
 struct bar_line
 {
-    long long hitTime;  // 落到判定线的时间（毫秒）
+    int64_t hitTime;  // 落到判定线的时间（毫秒）
 };
 
 std::vector<bar_line> BARLINE;
@@ -70,7 +70,7 @@ private:
     WORD color = White;  
     char chartype = '~';
 public:
-    void render(long long _now) {
+    void render(int64_t _now) {
         int BORDER = MARGIN_L + RAIL_WIDTH * 4 + 4;
         int judgeLineY = MARGIN_T + RAIl_HEIGHT; // 判定线Y
         for (auto& bl : BARLINE) {
@@ -89,8 +89,8 @@ bar_lines bl; //仅作为实例化供调用函数使用
 struct note
 {
     int column;
-    long long beat;
-    long long endbeat;
+    int64_t beat;
+    int64_t endbeat;
     int type ; //此处用 0 表示一般的note，1 表示长条
     bool clicked {false};
     bool judged {false};
@@ -113,7 +113,7 @@ public:
                 }
     }
 
-    void render(long long _now) {
+    void render(int64_t _now) {
         int judgeLineY = MARGIN_T + RAIl_HEIGHT; // 判定线Y
         for (auto& nt : NOTE) {
             int left = MARGIN_L + RAIL_WIDTH*(nt.column-1) + nt.column;
@@ -181,7 +181,7 @@ struct particle
     int x{0};
     double y{0};
     int len{0};
-    long long beat;
+    int64_t beat;
     bool activ{false};
 };
 
@@ -240,7 +240,7 @@ T getRandomElem(const std::vector<T>& vec)//用于在vector中随机选元素
     return vec[dis(gen)];
 }
 
-void spEffectRender(long long _time)//绘制轨道两边的下落弹幕效果
+void spEffectRender(int64_t _time)//绘制轨道两边的下落弹幕效果
 {
     WORD color = White;
     int border = MARGIN_L + RAIL_WIDTH * 4 + 4; 
@@ -334,7 +334,7 @@ void scoreCal(bool _missed,bool _combo)//更新CHARTINFO的分数
     CHARTINFO.score = curetscr;
 }
 
-void judge(long long _time) // 打击判定,记录得分
+void judge(int64_t _time) // 打击判定,记录得分
 {   
 
     WORD color = White;
@@ -363,7 +363,7 @@ void judge(long long _time) // 打击判定,记录得分
     for (auto& nt : NOTE){
         if (!nt.type){
             if (nt.column-1 == hit_track){
-                long long intvl = abs(_time- nt.beat);
+                int64_t intvl = abs(_time- nt.beat);
                 if ( intvl <= _maxjudge_ && !nt.judged){
                     nt.clicked=true;
                     nt.judged = true ; 
@@ -382,9 +382,9 @@ void judge(long long _time) // 打击判定,记录得分
             }
         }
         if (nt.type){
-            long long b_time = nt.endbeat - _maxjudge_; 
+            int64_t b_time = nt.endbeat - _maxjudge_; 
             if (nt.column-1 == hit_track && !nt.judged){
-                long long intvl = abs(_time- nt.beat);
+                int64_t intvl = abs(_time- nt.beat);
                 if ( intvl <= _maxjudge_ && !nt.judged){
                     nt.clicked= true;
                     nt.judged = true ; 
@@ -496,18 +496,18 @@ int y_trans(const int __pos_y)//y 的相对坐标->绝对坐标
     return __abs_pos_y;
 }
 
-long long getNowMs() //获取当前的时间
+int64_t getNowMs() //获取当前的时间
 {
     return GetTickCount64();
 }
 
 
-long long getGameTime()// 获取相对于游戏开始的时间
+int64_t getGameTime()// 获取相对于游戏开始的时间
 {
     return getNowMs()- gameStart;
 }
 
-long long getAudioTime()// 获取相对于音乐播放的时间
+int64_t getAudioTime()// 获取相对于音乐播放的时间
 {
     return getNowMs() - ChartAudioStart;
 }
@@ -575,11 +575,11 @@ void audioPlay(const std::string & _audioPath) //播放音频
     记录bpm转变的时间点
 */
 
-long long time_trans(const int _beatx,const int _beaty ,const int _beatz ,int _bpm)//节拍数->绝对ms（从0 开始）
+int64_t time_trans(const int _beatx,const int _beaty ,const int _beatz ,int _bpm)//节拍数->绝对ms（从0 开始）
 {   
     if (_bpm<= 0) _bpm= 120; //因为load_chart中可能会传入0，进行默认设置
     double bar = (60*1000)/_bpm;
-    long long time = static_cast<long long> (_beatx * bar + _beaty*(bar/_beatz));
+    int64_t time = static_cast<int64_t> (_beatx * bar + _beaty*(bar/_beatz));
     return time;
 }
 
@@ -644,7 +644,7 @@ void load_chart(const std::string& _path) //加载json谱面-> vector<note>,vect
         int col = note_json["column"].get<int>();
         int column = col + 1;
         
-        long long beat_ms = time_trans(bx, by, bz, bpm);
+        int64_t beat_ms = time_trans(bx, by, bz, bpm);
 
         //长条
         if (note_json.contains("endbeat")) {
@@ -652,7 +652,7 @@ void load_chart(const std::string& _path) //加载json谱面-> vector<note>,vect
             int ebx = endbeat[0].get<int>();
             int eby = endbeat[1].get<int>();
             int ebz = endbeat[2].get<int>();
-            long long end_ms = time_trans(ebx, eby, ebz, bpm);
+            int64_t end_ms = time_trans(ebx, eby, ebz, bpm);
             NOTE.push_back({column, beat_ms, end_ms, 1});
         } 
 
@@ -723,8 +723,8 @@ void PLAYRENDER()//游戏进程中每一帧所有过程渲染
 {       
         clearBuffer();
 
-        long long gametime = getGameTime();
-        long long audiotime = getAudioTime();
+        int64_t gametime = getGameTime();
+        int64_t audiotime = getAudioTime();
 
         judge(audiotime);
 
@@ -739,6 +739,7 @@ void PLAYRENDER()//游戏进程中每一帧所有过程渲染
 }
 
 
+
 void playChart(const std::string& _chartPath,const std::string& _audioPath )//此函数完成所有播放工作。包括开始结束动画，分数显示。容器清空等。
 {   
     CHARTINFO = chartinfo ();
@@ -746,16 +747,19 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     load_chart(_chartPath);//调用时会清空容器
 
     gameOpenRender();
- 
+    
+    
     audioPlay(_audioPath), ChartAudioStart = getNowMs();
     ma_sound_get_length_in_seconds(&sound,& CHARTINFO.total_duration);
-    
+
     while (true){
         if (CHARTINFO.proc >= CHARTINFO.total_duration) break;
-        ma_sound_get_cursor_in_seconds(&sound, &CHARTINFO.proc); //追踪音频播放进度
+        if (IS_DOWN(VK_ESCAPE)) pauseChart();
+        ma_sound_get_cursor_in_seconds(&sound, &CHARTINFO.proc); //追踪音频播放进度->float (s)
         PLAYRENDER();
         Sleep(8);
     }
+
     Sleep(2000);
 
     gameOverRender();
@@ -763,10 +767,69 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     CHARTINFO = chartinfo (); //清空CHARTINFO
 }
 
+//待补完
+void pauseChart()//暂停谱面播放,处理按下esc后的行为
+{
+    ma_sound_stop(&sound);
+    int64_t start = getNowMs();
+    int key{};//1继续2重来3退出
+
+    while (true){
+        if (IS_DOWN('F')){key = 1; break;}
+        if (IS_DOWN('D')){key = 2 ; break;}
+        if (IS_DOWN(VK_ESCAPE)){key = 3 ; break;}
+
+        //以下是默认渲染进程
+        int64_t gametime = getGameTime();
+        clearBuffer();
+        line.render();
+        bl.render(start - ChartAudioStart);
+        nt.render(start - ChartAudioStart);
+        spEffectRender(gametime);     
+        playInfoRender();
+        //
+
+        //暂停的提示渲染    
+        drawAscii(MARGIN_L-5 , MARGIN_T+4 , PAUSED, White);
+        for(int x =0 ;x <= WIDTH;x++){ 
+            drawChar(x, MARGIN_L + RAIl_HEIGHT -1, ' ',White);
+            drawChar(x, MARGIN_L + RAIl_HEIGHT , ' ',White);
+            drawChar(x, MARGIN_L + RAIl_HEIGHT +1, ' ',White);
+        }
+        drawString(MARGIN_L -3 , MARGIN_L + RAIl_HEIGHT, "RESTART D",White);
+        drawString(MARGIN_L + 7 , MARGIN_L + RAIl_HEIGHT, "CONTINUE F",White);
+        drawString(MARGIN_L + 17 , MARGIN_L + RAIl_HEIGHT, "EXIT esc",White);
+
+        render();
+        Sleep(8);
+    }
+
+    switch(key){
+        case 1:{
+            int64_t s = getNowMs();
+            while (getNowMs() - s <=3500){
+                int64_t now = getNowMs();
+                int64_t intvl = now - s;
+                if (intvl <= 1000) drawAscii(MARGIN_L + RAIL_WIDTH*2 , (RAIl_HEIGHT+ MARGIN_T) /2 , Three , White);
+                else if (intvl <=2000 ) drawAscii(MARGIN_L + RAIL_WIDTH*2 , (RAIl_HEIGHT+ MARGIN_T) /2 , Two , White);
+                else drawAscii(MARGIN_L + RAIL_WIDTH*2 , (RAIl_HEIGHT+ MARGIN_T) /2 , One , White);
+            }
+            int64_t end = getNowMs();//以下三行中禁止添加操作以减小时差
+            ChartAudioStart += end - start;
+            ma_sound_start(&sound);
+            return;
+        }
+        case 2:   break;  
+        case 3: break;
+    }
+
+}
+
+
 
 int main(){
     init();
-    playChart("../test.json","../test.wav");
+    playChart("chart/test.json","chart/test.wav");
     Sleep(10000);
 }
     

@@ -9,6 +9,7 @@
 #pragma execution_character_set("gbk")
 
 #include <windows.h>
+#include <cstdint>
 #include "json.hpp"
 #include "mainf.h"
 
@@ -58,10 +59,10 @@ extern char track1 ;
 extern char track2;
 extern char track3 ;
 extern char track4 ;
-extern long long _maxjudge_ ;
+extern int64_t _maxjudge_ ;
 extern int _critical_pure_ ;
 extern int _pure_ ;
 extern int _far_ ;
 
-extern long long gameStart;
-extern long long ChartAudioStart;
+extern int64_t gameStart;
+extern int64_t ChartAudioStart;

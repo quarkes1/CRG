@@ -17,3 +17,7 @@ extern const std::vector<std::string> B ;
 extern const std::vector<std::string> C ;
 extern const std::vector<std::string> TL ;
 extern const std::vector<std::string> TC;
+extern const std::vector<std::string> PAUSED;
+extern const std::vector<std::string> Three ;
+extern const std::vector<std::string> Two;
+extern const std::vector<std::string> One;

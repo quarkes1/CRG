@@ -11,13 +11,14 @@
 #include <string>
 #include <sstream>
 #include <random>
+#include <cstdint>
 #include "global.h"
 #include "visual.h"
 #include "json.hpp"
-
+#include "ascii.h"
 #include "miniaudio.h"
 
-void judge(long long _time);
+void judge(int64_t _time);
 void restore_input_echo();
 void disable_input_echo();
 void clearBuffer();
@@ -26,15 +27,15 @@ void render();
 void goto_xy(const int __abs_pos_x,const int __abs_pos_y);
 int x_trans(const int __pos_x);
 int y_trans(const int __pos_y);
-long long time_trans(const int _beatx,const int _beaty , const int _beatz ,int _bpm);
+int64_t time_trans(const int _beatx,const int _beaty , const int _beatz ,int _bpm);
 void init();
-long long getNowMs();
-long long getGameTime();
+int64_t getNowMs();
+int64_t getGameTime();
 void load_chart(const std::string& _path);
 void drawString(int _abs_pos_x, int _abs_pos_y, const char* _str, WORD _color);
 void scoreCal(bool _missed,bool _combo);
 void empty(const int _x1,const int _x2 ,const int _y1, const int _y2);
-void spEffectRender(long long _time);
+void spEffectRender(int64_t _time);
 void playInfoRender();
 
 void audioInit();
@@ -44,6 +45,7 @@ void audioPlay(const std::string & _audioPath);
 void PLAYRENDER();
 
 void playChart(const std::string& _chartPath,const std::string& _audioPath );
+void pauseChart();
 
 struct chartinfo
 {
@@ -62,8 +64,8 @@ struct chartinfo
     int miss{0}; 
 
     bool tracklost{false};
-    float proc{0};//播放进度
-    float total_duration{0};//总时长
+    float proc{-1};//播放进度(s)
+    float total_duration{0};//总时长(s)
 };
 
 extern chartinfo CHARTINFO;

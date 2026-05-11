@@ -26,11 +26,11 @@ char track2 = 'F';
 char track3 = 'J';
 char track4 = 'K'; //不可使用小写
 
-long long _maxjudge_ = 100 ; //超过此范围的不会被判定
+int64_t _maxjudge_ = 100 ; //超过此范围的不会被判定
 int _critical_pure_ = 20 ;
 int _pure_ = 40 ;
 int _far_ = 80 ;
 
-long long gameStart;
+int64_t gameStart;
 
-long long ChartAudioStart;//记录谱面音乐开始播放的时间，用于对齐谱面
+int64_t ChartAudioStart;//记录谱面音乐开始播放的时间，用于对齐谱面

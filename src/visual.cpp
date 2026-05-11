@@ -143,7 +143,7 @@ std::vector<line>LINE{};
 void gameOpenRender()//绘制开始时的效果
 {   
     WORD color = White;
-    long long starttime = getNowMs();
+    int64_t starttime = getNowMs();
     char chartype {'#'};
     double duration {500} ;//该动画持续的时间
     double pause {3000};
@@ -180,12 +180,12 @@ void gameOpenRender()//绘制开始时的效果
         LINE.push_back(right);
     }
     
-    const long long beat { starttime + duration} ;
-    const long long endbeat {starttime + duration*2 + pause};
+    const int64_t beat { starttime + duration} ;
+    const int64_t endbeat {starttime + duration*2 + pause};
 
     //合上
     while (true){
-      long long now = getNowMs();
+      int64_t now = getNowMs();
       if (now>=beat) break;
       clearBuffer();
       for (line& l :LINE){
@@ -213,12 +213,12 @@ void gameOpenRender()//绘制开始时的效果
 
    Sleep(pause);
 
-   long long t = getNowMs();
+   int64_t t = getNowMs();
    int eps = 500; //用来纠正程序运行时间的误差
 
    //打开
    while (true){
-      long long now = getNowMs();
+      int64_t now = getNowMs();
       if (now>=endbeat+eps) break;
       clearBuffer();
       lineRender();
@@ -249,7 +249,7 @@ void gameOverRender()//绘制结束时的效果
 {
      
     WORD color = White;
-    long long starttime = getNowMs();
+    int64_t starttime = getNowMs();
     char chartype {'#'};
     double duration {500} ;//该动画持续的时间
     double pause {3000};
@@ -286,12 +286,12 @@ void gameOverRender()//绘制结束时的效果
         LINE.push_back(right);
     }
     
-    const long long beat { starttime + duration} ;
-    const long long endbeat {starttime + duration*2 + pause};
+    const int64_t beat { starttime + duration} ;
+    const int64_t endbeat {starttime + duration*2 + pause};
 
     //合上
     while (true){
-      long long now = getNowMs();
+      int64_t now = getNowMs();
       if (now>=beat) break;
       clearBuffer();
       for (line& l :LINE){
@@ -317,12 +317,12 @@ void gameOverRender()//绘制结束时的效果
 
    Sleep(pause);
 
-   long long t = getNowMs();
+   int64_t t = getNowMs();
    int eps = 300; //用来纠正程序运行时间的误差
 
    //打开
    while (true){
-      long long now = getNowMs();
+      int64_t now = getNowMs();
       if (now>=endbeat+eps) break;
       clearBuffer();
       showScore();
