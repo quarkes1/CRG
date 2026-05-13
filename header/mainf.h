@@ -63,6 +63,9 @@ struct chartinfo
     int _far{0};
     int miss{0}; 
 
+    int status{0}; //0表示正常播放 1 表示暂停 在经过pauseChart处理后（已改变choice）就会置0；
+    int choice{0}; ////1继续 2重来 3退出 （在暂停状态下的行为）
+
     bool tracklost{false};
     float proc{-1};//播放进度(s)
     float total_duration{0};//总时长(s)

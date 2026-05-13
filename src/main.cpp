@@ -336,7 +336,7 @@ void scoreCal(bool _missed,bool _combo)//更新CHARTINFO的分数
 
 void judge(int64_t _time) // 打击判定,记录得分
 {   
-
+    if (CHARTINFO.status == 1) return; //暂停不判定
     WORD color = White;
     int hit_track{-1};
     if (IS_DOWN(track1)) {
@@ -434,10 +434,11 @@ void clearBuffer() //清空屏幕缓冲区
     }
 }
 
-void drawChar(int _abs_pos_x, int _abs_pos_y, char _char, WORD _color) //在缓冲区绘制字符
+void drawChar(int _abs_pos_x, int _abs_pos_y, char _char, WORD _color) //在缓冲区绘制字符(先擦除再绘制)
 {
     
     if (_abs_pos_x >= 0 && _abs_pos_x < WIDTH && _abs_pos_y >=0 && _abs_pos_y < HEIGHT) {
+        buffer[_abs_pos_y][_abs_pos_x].Char.AsciiChar = ' '; 
         buffer[_abs_pos_y][_abs_pos_x].Char.AsciiChar = _char;   
         buffer[_abs_pos_y][_abs_pos_x].Attributes = _color;   
     }
@@ -691,6 +692,7 @@ void init()//全局初始化
     disable_input_echo();
     gameStart = getNowMs();
     audioInit();
+    memset(&sound, 0, sizeof(ma_sound)); 
 }
 
 /*
@@ -745,16 +747,50 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     CHARTINFO = chartinfo ();
 
     load_chart(_chartPath);//调用时会清空容器
+    bool restart{false};
 
+    START:
+    if (restart){
+        for (note &nt :NOTE){
+            nt.judged = false;
+            nt.judge = 0;
+            nt.clicked = false;
+        }
+        CHARTINFO.combo =0;
+        CHARTINFO.critical_perfect=0;
+        CHARTINFO.perfect =0;
+        CHARTINFO.maxcombo =0;
+        CHARTINFO.miss =0;
+        CHARTINFO._far = 0;
+        CHARTINFO.score =0;
+        CHARTINFO.proc = 0;
+        CHARTINFO.tracklost = false ;
+        CHARTINFO.status = 0;
+    }
+
+    audioInit();
+  
     gameOpenRender();
-    
     
     audioPlay(_audioPath), ChartAudioStart = getNowMs();
     ma_sound_get_length_in_seconds(&sound,& CHARTINFO.total_duration);
 
     while (true){
         if (CHARTINFO.proc >= CHARTINFO.total_duration) break;
-        if (IS_DOWN(VK_ESCAPE)) pauseChart();
+        if (IS_DOWN(VK_ESCAPE) ){        
+            CHARTINFO.status = 1;
+            pauseChart();
+        }
+
+        if (CHARTINFO.choice == 2) {
+            CHARTINFO.choice = 0;
+            restart = true;
+            goto START;
+        }
+        if (CHARTINFO.choice == 3){
+            CHARTINFO.choice ==0 ;
+            goto EXIT;
+        }
         ma_sound_get_cursor_in_seconds(&sound, &CHARTINFO.proc); //追踪音频播放进度->float (s)
         PLAYRENDER();
         Sleep(8);
@@ -764,64 +800,92 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
 
     gameOverRender();
 
+    EXIT:
     CHARTINFO = chartinfo (); //清空CHARTINFO
 }
 
-//待补完
-void pauseChart()//暂停谱面播放,处理按下esc后的行为
+
+void pauseChart()//暂停谱面播放,处理按下esc后的行为,此函数处理继续播放
 {
     ma_sound_stop(&sound);
-    int64_t start = getNowMs();
-    int key{};//1继续2重来3退出
+    int64_t pauseStartTime = getNowMs(); // 记录暂停开始的时间戳
+    int64_t audioPosAtPause = 0; // 记录暂停时音频的播放位置（毫秒）
+    // 获取暂停时音频已经播放的毫秒数
+    float audioPosSec;
+    ma_sound_get_cursor_in_seconds(&sound, &audioPosSec);
+    audioPosAtPause = static_cast<int64_t>(audioPosSec * 1000);
+    while (IS_DOWN(VK_ESCAPE)) { Sleep(5); } 
 
     while (true){
-        if (IS_DOWN('F')){key = 1; break;}
-        if (IS_DOWN('D')){key = 2 ; break;}
-        if (IS_DOWN(VK_ESCAPE)){key = 3 ; break;}
+        if (IS_DOWN('F')){CHARTINFO.choice = 1; break;}//1继续2重来3退出
+        if (IS_DOWN('D')){CHARTINFO.choice = 2 ; break;}
+        if (IS_DOWN(VK_ESCAPE)){CHARTINFO.choice = 3 ; break;}
 
         //以下是默认渲染进程
-        int64_t gametime = getGameTime();
+        int64_t pausedAudioTime = audioPosAtPause; 
         clearBuffer();
         line.render();
-        bl.render(start - ChartAudioStart);
-        nt.render(start - ChartAudioStart);
-        spEffectRender(gametime);     
+        bl.render(pausedAudioTime); // 暂停时固定显示当前音频进度的画面
+        nt.render(pausedAudioTime);
+        spEffectRender(getGameTime());     
         playInfoRender();
         //
 
         //暂停的提示渲染    
         drawAscii(MARGIN_L-5 , MARGIN_T+4 , PAUSED, White);
         for(int x =0 ;x <= WIDTH;x++){ 
-            drawChar(x, MARGIN_L + RAIl_HEIGHT -1, ' ',White);
-            drawChar(x, MARGIN_L + RAIl_HEIGHT , ' ',White);
-            drawChar(x, MARGIN_L + RAIl_HEIGHT +1, ' ',White);
+            drawChar(x, MARGIN_T + RAIl_HEIGHT -6 , ' ',White);
+            drawChar(x, MARGIN_T + RAIl_HEIGHT -7 , ' ',White);
+            drawChar(x, MARGIN_T + RAIl_HEIGHT  -8 , ' ',White);
         }
-        drawString(MARGIN_L -3 , MARGIN_L + RAIl_HEIGHT, "RESTART D",White);
-        drawString(MARGIN_L + 7 , MARGIN_L + RAIl_HEIGHT, "CONTINUE F",White);
-        drawString(MARGIN_L + 17 , MARGIN_L + RAIl_HEIGHT, "EXIT esc",White);
+        drawString(MARGIN_L -5 , MARGIN_T + RAIl_HEIGHT - 7 , "RESTART D",White);
+        drawString(MARGIN_L + 7 , MARGIN_T + RAIl_HEIGHT - 7, "CONTINUE F",White);
+        drawString(MARGIN_L + 20 , MARGIN_T + RAIl_HEIGHT - 7, "EXIT esc",White);
 
         render();
         Sleep(8);
     }
-
-    switch(key){
+    
+    //处理choice
+    switch(CHARTINFO.choice){
         case 1:{
             int64_t s = getNowMs();
-            while (getNowMs() - s <=3500){
+            while (getNowMs() - s <=3500){//绘制3s倒计时
+                clearBuffer();
+                line.render();
+                bl.render(audioPosAtPause); // 暂停时固定显示当前音频进度的画面
+                nt.render(audioPosAtPause);
+                spEffectRender(getGameTime());     
+                playInfoRender();
+
                 int64_t now = getNowMs();
                 int64_t intvl = now - s;
                 if (intvl <= 1000) drawAscii(MARGIN_L + RAIL_WIDTH*2 , (RAIl_HEIGHT+ MARGIN_T) /2 , Three , White);
                 else if (intvl <=2000 ) drawAscii(MARGIN_L + RAIL_WIDTH*2 , (RAIl_HEIGHT+ MARGIN_T) /2 , Two , White);
                 else drawAscii(MARGIN_L + RAIL_WIDTH*2 , (RAIl_HEIGHT+ MARGIN_T) /2 , One , White);
+
+                render();
             }
-            int64_t end = getNowMs();//以下三行中禁止添加操作以减小时差
-            ChartAudioStart += end - start;
+            CHARTINFO.status = 0; //经过pause函数就判定为正常播放
+
+            //以下三行中禁止添加操作以减小时差
+            ChartAudioStart = getNowMs() - audioPosAtPause;
             ma_sound_start(&sound);
             return;
         }
-        case 2:   break;  
-        case 3: break;
-    }
+        case 2:{//重来
+            ma_sound_stop(&sound); // 停止当前音频
+            ma_sound_uninit(&sound); // 释放音频资源
+            CHARTINFO.status = 0; // 重置状态
+            break;
+        }
+        case 3:{
+            ma_sound_stop(&sound);
+            ma_sound_uninit(&sound);
+            CHARTINFO.status = 0;
+            break;
+        }
+    }   
 
 }
 
