@@ -55,17 +55,17 @@ inline void showScore()//供gameOverRender调用，绘制分数
     else rank =6;
 
 
-    if (CHARTINFO.tracklost) drawAscii(2 ,2 , TL,White);
+    if (CHARTINFO.tracklost) drawAscii(8 , 2, TL,White);
     else drawAscii(2,2,TC, White);
 
     switch(rank){
         case 0: drawAscii(start_x,start_y,EXp, color);
         case 1: drawAscii(start_x,start_y,EX, color);
         case 2: drawAscii(start_x,start_y,AA, color);
-        case 3: drawAscii(start_x,start_y,A, color);
-        case 4: drawAscii(start_x,start_y,B, color);
-        case 5: drawAscii(start_x,start_y,C, color);
-        case 6: drawAscii(start_x,start_y,D, color);
+        case 3: drawAscii(start_x +4,start_y,A, color);
+        case 4: drawAscii(start_x +4 ,start_y,B, color);
+        case 5: drawAscii(start_x +4 ,start_y,C, color);
+        case 6: drawAscii(start_x +4,start_y,D, color);
     }
 
 
@@ -146,7 +146,7 @@ void gameOpenRender()//绘制开始时的效果
     int64_t starttime = getNowMs();
     char chartype {'#'};
     double duration {500} ;//该动画持续的时间
-    double pause {3000};
+    double pause {2500};
     const int center = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
     const double Y = MARGIN_T + RAIl_HEIGHT + 5; 
     const int BORDER_r = MARGIN_L + RAIL_WIDTH * 4 + 4 +35;
@@ -183,7 +183,10 @@ void gameOpenRender()//绘制开始时的效果
     const int64_t beat { starttime + duration} ;
     const int64_t endbeat {starttime + duration*2 + pause};
 
+
     //合上
+    audioInit();
+    audioPlay("sound/screenclose.wav");
     while (true){
       int64_t now = getNowMs();
       if (now>=beat) break;
@@ -209,47 +212,50 @@ void gameOpenRender()//绘制开始时的效果
       render();
       Sleep(1);
    }
+    Sleep(pause);
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
 
+    int64_t t = getNowMs();
+    int eps = 500; //用来纠正程序运行时间的误差
 
-   Sleep(pause);
-
-   int64_t t = getNowMs();
-   int eps = 500; //用来纠正程序运行时间的误差
 
    //打开
-   while (true){
-      int64_t now = getNowMs();
-      if (now>=endbeat+eps) break;
-      clearBuffer();
-      lineRender();
-      playInfoRender();
-      for (line& l :LINE){
-          if (l.is_left){
-              int x_pos = l.x - round2int( duration*v) + round2int( (endbeat - now)*v );
-              for (int x = x_pos - l.len; x <=x_pos ;x++){
-                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
-                    drawChar(x , l.y ,chartype , color);
-              }
-          }
-          else{
-              int x_pos = l.x + round2int(duration*v) - round2int( (endbeat-now)*v );
-              for (int x = x_pos+ l.len ; x>= x_pos ; x--){
-                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
-                    drawChar(x , l.y ,chartype , color);
-              }
-          }        
-      }
-      render();
-      Sleep(1);
-   }
-  
+    audioInit();
+    audioPlay("sound/screenopen.wav");
+    while (true){
+        int64_t now = getNowMs();
+        if (now>=endbeat+eps) break;
+        clearBuffer();
+        lineRender();
+        playInfoRender();
+        for (line& l :LINE){
+            if (l.is_left){
+                int x_pos = l.x - round2int( duration*v) + round2int( (endbeat - now)*v );
+                for (int x = x_pos - l.len; x <=x_pos ;x++){
+                    if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                        drawChar(x , l.y ,chartype , color);
+                }
+            }
+            else{
+                int x_pos = l.x + round2int(duration*v) - round2int( (endbeat-now)*v );
+                for (int x = x_pos+ l.len ; x>= x_pos ; x--){
+                    if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                        drawChar(x , l.y ,chartype , color);
+                }
+            }        
+        }
+        render();
+        Sleep(1);
+    }
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);   
 }
 
 void gameOverRender()//绘制结束时的效果
 {
      
     WORD color = White;
-    int64_t starttime = getNowMs();
     char chartype {'#'};
     double duration {500} ;//该动画持续的时间
     double pause {3000};
@@ -286,14 +292,44 @@ void gameOverRender()//绘制结束时的效果
         LINE.push_back(right);
     }
     
-    const int64_t beat { starttime + duration} ;
-    const int64_t endbeat {starttime + duration*2 + pause};
+
+    //渲染tracklost / trackcomplete
+    audioInit();
+    if (CHARTINFO.tracklost) audioPlay("sound/lost.wav");
+    else audioPlay("sound/complete.wav");
+    int64_t s = getNowMs();
+    while (true){  
+        int64_t now = getNowMs();
+        if (now - s >= 3000)  break;    
+        clearBuffer();
+        lineRender();
+        playInfoRender();
+        spEffectRender(getGameTime());
+
+        //drawAscii(2, MARGIN_T + RAIl_HEIGHT/2 , end , White);
+        if (now -s >= 200){
+            if (CHARTINFO.tracklost) drawAscii (MARGIN_L, MARGIN_T + RAIl_HEIGHT/2 , TL ,White);
+            else  drawAscii (MARGIN_L, MARGIN_T + RAIl_HEIGHT/2 , TC ,White);
+        }
+        render();
+        Sleep(1);
+    }
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
 
     //合上
+    audioInit();
+    int64_t starttime = getNowMs();
+    const int64_t beat { starttime + duration} ;
+    const int64_t endbeat {starttime + duration*2 + pause};
+    audioPlay("sound/screenclose.wav");
+
     while (true){
       int64_t now = getNowMs();
       if (now>=beat) break;
       clearBuffer();
+      lineRender();
+      playInfoRender();
       for (line& l :LINE){
           if (l.is_left){
               int x_pos = l.x - round2int( (beat - now)* v );
@@ -313,21 +349,25 @@ void gameOverRender()//绘制结束时的效果
       render();
       Sleep(1);
    }
+    Sleep(pause);
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
 
 
-   Sleep(pause);
 
    int64_t t = getNowMs();
    int eps = 300; //用来纠正程序运行时间的误差
 
    //打开
-   while (true){
-      int64_t now = getNowMs();
-      if (now>=endbeat+eps) break;
-      clearBuffer();
-      showScore();
-      render();
-      for (line& l :LINE){
+    audioInit();
+    audioPlay("sound/screenopen.wav");
+    while (true){
+        int64_t now = getNowMs();
+        if (now>=endbeat+eps) break;
+        clearBuffer();
+        showScore();
+        render();
+        for (line& l :LINE){
           if (l.is_left){
               int x_pos = l.x - round2int( duration*v) + round2int( (endbeat - now)*v );
               for (int x = x_pos - l.len; x <=x_pos ;x++){
@@ -345,8 +385,17 @@ void gameOverRender()//绘制结束时的效果
       }
       render();
       Sleep(1);
-   }
-   clearBuffer();
-   showScore();
-   render();
+    }
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
+
+
+    clearBuffer();
+
+    audioInit();
+    if (CHARTINFO.tracklost) audioPlay("sound/tracklost.wav");
+    else audioPlay("sound/trackcomplete.wav");
+
+    showScore();
+    render();
 }

@@ -53,7 +53,7 @@ extern const int RAIL_WIDTH ;
 extern const int RAIl_HEIGHT;
 
 extern double speed ;
-
+extern bool AUTOPLAY;
 
 extern char track1 ;
 extern char track2;

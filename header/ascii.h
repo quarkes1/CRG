@@ -21,3 +21,4 @@ extern const std::vector<std::string> PAUSED;
 extern const std::vector<std::string> Three ;
 extern const std::vector<std::string> Two;
 extern const std::vector<std::string> One;
+extern const std::vector<std::string> end;

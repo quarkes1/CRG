@@ -194,13 +194,44 @@ void empty(const int _x1,const int _x2 ,const int _y1, const int _y2)//清空指
             drawChar(x,y,' ',White);
 }
 
-void playInfoRender()//在轨道右侧指定位置绘制游戏信息
+void playInfoRender()//绘制游戏信息
 {   
     WORD color = White;
+    WORD recallcolor = White;
     int BORDER = MARGIN_L + RAIL_WIDTH * 4 + 10;
     int height = 7;
     int width = 40;
     empty(BORDER,BORDER+width, MARGIN_T, MARGIN_T+height);
+
+    switch (CHARTINFO.model){
+        case 0 : recallcolor = Cyan;break;
+        case 1 : recallcolor = Blue;break;
+        case 2 :{
+            if (CHARTINFO.recall <=30) recallcolor = DarkRed;
+            else recallcolor = Red;
+        }
+    }
+    
+    //绘制回忆条
+    int recall_X = 5; 
+    int recall_Y = MARGIN_T + RAIl_HEIGHT/2 -3 ; //回忆条上端的坐标
+    
+    int recall_h = 12;
+    empty(recall_X -2 ,recall_X + 3 , recall_Y-2,recall_Y +recall_h +1);
+    std::stringstream s0;
+    s0 <<CHARTINFO.recall;
+    std::string rc = s0.str();
+    const char *recall = rc.c_str();
+    drawString(recall_X ,recall_Y -1 ,recall , White);
+    int h = recall_h * (CHARTINFO.recall/100.0);
+    for (int y = recall_Y + recall_h ; y >=  recall_Y + recall_h - h ; y--){
+        drawChar(recall_X  , y , '#', recallcolor);
+    }
+    for (int y= recall_Y ; y< recall_Y + recall_h - h ; y++) {
+        drawChar (recall_X  , y , '|', White);
+    }
+    //
+
     
     std::stringstream ss;
     ss << std::setw(8) << std::setfill('0') << CHARTINFO.score;
@@ -218,9 +249,10 @@ void playInfoRender()//在轨道右侧指定位置绘制游戏信息
     drawString(BORDER,MARGIN_T+4,CHARTINFO.title.c_str(),color);
     drawString(BORDER,MARGIN_T+6,CHARTINFO.version.c_str(),color);
 
-    drawString(MARGIN_L+ RAIL_WIDTH*2 - 3,MARGIN_T-2,"COMBO",color);
-    drawString(MARGIN_L+ RAIL_WIDTH*2 + 3,MARGIN_T-2,std::to_string(CHARTINFO.combo).c_str(),color);
+    if (AUTOPLAY) drawString(MARGIN_L+ RAIL_WIDTH*2 - 3,MARGIN_T-2,"AUTO",color);
+    if (!AUTOPLAY) drawString(MARGIN_L+ RAIL_WIDTH*2 - 3,MARGIN_T-2,"COMBO",color);
 
+    drawString(MARGIN_L+ RAIL_WIDTH*2 + 3,MARGIN_T-2,std::to_string(CHARTINFO.combo).c_str(),color);
  
 }
 
@@ -319,7 +351,7 @@ void spEffectRender(int64_t _time)//绘制轨道两边的下落弹幕效果
     }   
 }
 
-void scoreCal(bool _missed,bool _combo)//更新CHARTINFO的分数
+void scoreCal(bool _missed,bool _combo, int _hitTrack)//更新CHARTINFO的分数，处理recall增加
 {
     if (_missed) {CHARTINFO.combo = 0 ; return;}
     
@@ -332,11 +364,24 @@ void scoreCal(bool _missed,bool _combo)//更新CHARTINFO的分数
     long int curetscr = unit*CHARTINFO.perfect+ 0.5*unit*CHARTINFO._far + CHARTINFO.critical_perfect;
     
     CHARTINFO.score = curetscr;
+
+    //recall 增加
+    if (_hitTrack != -1){
+        int inc{};
+        switch (CHARTINFO.model){
+            case 0 : inc = ((CHARTINFO.maxcount/1.5) / 100) * 1.5 ;  break;
+            case 1 :case 2 : inc = ((CHARTINFO.maxcount/1.5) / 100); break; 
+        }
+
+        if (CHARTINFO.recall <100) CHARTINFO.recall+= inc;
+        if (CHARTINFO.recall >100) CHARTINFO.recall =100;
+    }
 }
 
 void judge(int64_t _time) // 打击判定,记录得分
 {   
     if (CHARTINFO.status == 1) return; //暂停不判定
+    if (CHARTINFO.model == 2  && CHARTINFO.recall == 0){ CHARTINFO.tracklost = true; return ;}
     WORD color = White;
     int hit_track{-1};
     if (IS_DOWN(track1)) {
@@ -360,49 +405,102 @@ void judge(int64_t _time) // 打击判定,记录得分
 
     bool combo{false};
 
-    for (auto& nt : NOTE){
-        if (!nt.type){
-            if (nt.column-1 == hit_track){
-                int64_t intvl = abs(_time- nt.beat);
-                if ( intvl <= _maxjudge_ && !nt.judged){
-                    nt.clicked=true;
-                    nt.judged = true ; 
-                    combo = true ; 
-                    if (intvl <= _critical_pure_) {nt.judge = 3;CHARTINFO.critical_perfect++; CHARTINFO.perfect++;}
-                    else if (intvl > _critical_pure_ && intvl <= _pure_){nt.judge = 2;CHARTINFO.perfect++;}
-                    else if (intvl > _pure_ && intvl <= _far_){nt.judge = 1;CHARTINFO._far++;}          
-                }
-            }
-            
-            //miss
-            if (_time-nt.beat>_maxjudge_ && !nt.judged) {
-                nt.judged = true ;
-                CHARTINFO.miss++;
-                missed = true;
+    if (AUTOPLAY){
+        for (auto& nt :NOTE){
+            int64_t intvl = abs(_time- nt.beat);
+            if (intvl <= _critical_pure_ && !nt.judged){
+                nt.clicked=true;
+                nt.judged = true ; 
+                combo = true ; 
+                nt.judge = 3;CHARTINFO.critical_perfect++; CHARTINFO.perfect++;
+                scoreCal(missed,combo , hit_track);
             }
         }
-        if (nt.type){
-            int64_t b_time = nt.endbeat - _maxjudge_; 
-            if (nt.column-1 == hit_track && !nt.judged){
-                int64_t intvl = abs(_time- nt.beat);
-                if ( intvl <= _maxjudge_ && !nt.judged){
-                    nt.clicked= true;
-                    nt.judged = true ; 
-                    combo = true ;
-                    if (intvl <= _critical_pure_) {nt.judge = 3; CHARTINFO.critical_perfect++; CHARTINFO.perfect++;}
-                    else if (intvl > _critical_pure_ && intvl <= _pure_){nt.judge = 2; CHARTINFO.perfect++;}
-                    else if (intvl > _pure_ && intvl <= _far_){nt.judge = 1; CHARTINFO._far++;}          
+    }
+
+    if (!AUTOPLAY){
+        for (auto& nt : NOTE){
+            if (!nt.type){
+                if (nt.column-1 == hit_track){
+                    int64_t intvl = abs(_time- nt.beat);
+                    if ( intvl <= _maxjudge_ && !nt.judged){
+                        nt.clicked=true;
+                        nt.judged = true ; 
+                        combo = true ; 
+                        if (intvl <= _critical_pure_) {nt.judge = 3;CHARTINFO.critical_perfect++; CHARTINFO.perfect++;}
+                        else if (intvl > _critical_pure_ && intvl <= _pure_){nt.judge = 2;CHARTINFO.perfect++;}
+                        else if (intvl > _pure_ && intvl <= _far_){nt.judge = 1;CHARTINFO._far++;}
+                        scoreCal(missed,combo , hit_track);          
+                    }
+                }
+                
+                //miss
+                if (_time-nt.beat>_maxjudge_ && !nt.judged) {
+                    nt.judged = true ;
+                    CHARTINFO.miss++;
+                    missed = true;
+                    int ms{};
+                    switch(CHARTINFO.model){
+                        case 0: ms = 2;break;
+                        case 1: ms = 4;break;
+                        case 2: ms =6 ;break;
+                    }
+                    if (CHARTINFO.recall>0){
+                        CHARTINFO.recall -= ms;
+                    } 
+                    if (CHARTINFO.recall <0) CHARTINFO.recall =0;
+                    scoreCal(missed,combo , hit_track);
                 }
             }
-            if (nt.judged && _time <= b_time && hit_track== -1 ){ //长条松手判定
-                nt.judge = 0 ;
-                CHARTINFO.miss++;
-                missed = true ; 
-            }         
-            if (_time-nt.beat>_maxjudge_ && !nt.judged) {nt.judged = true ; missed = true ;CHARTINFO.miss++;}
-        }     
+            if (nt.type){
+                int64_t b_time = nt.endbeat - _maxjudge_; 
+                if (nt.column-1 == hit_track && !nt.judged){
+                    int64_t intvl = abs(_time- nt.beat);
+                    if ( intvl <= _maxjudge_ && !nt.judged){
+                        nt.clicked= true;
+                        nt.judged = true ; 
+                        combo = true ;
+                        if (intvl <= _critical_pure_) {nt.judge = 3; CHARTINFO.critical_perfect++; CHARTINFO.perfect++;}
+                        else if (intvl > _critical_pure_ && intvl <= _pure_){nt.judge = 2; CHARTINFO.perfect++;}
+                        else if (intvl > _pure_ && intvl <= _far_){nt.judge = 1; CHARTINFO._far++;} 
+                        scoreCal(missed,combo , hit_track);         
+                    }
+                }
+                if (nt.judged && _time <= b_time && hit_track== -1 ){ //长条松手判定
+                    nt.judge = 0 ;
+                    CHARTINFO.miss++;
+                    missed = true ;
+                    int ms{};
+                    switch(CHARTINFO.model){
+                        case 0: ms = 2;break;
+                        case 1: ms = 4;break;
+                        case 2: ms =6 ;break;
+                    }
+                    if (CHARTINFO.recall>0){
+                        CHARTINFO.recall -= ms;
+                    } 
+                    if (CHARTINFO.recall <0) CHARTINFO.recall =0;
+                    scoreCal(missed,combo , hit_track);
+                }         
+                if (_time-nt.beat>_maxjudge_ && !nt.judged) {
+                    nt.judged = true ; missed = true ;CHARTINFO.miss++;
+                    int ms{};
+                    switch(CHARTINFO.model){
+                        case 0: ms = 2;break;
+                        case 1: ms = 4;break;
+                        case 2: ms =6 ;break;
+                    }
+                    if (CHARTINFO.recall>0){
+                        CHARTINFO.recall -= ms;
+                    } 
+                    if (CHARTINFO.recall <0) CHARTINFO.recall =0;
+                    scoreCal(missed,combo , hit_track);
+                }
+            }
+
+        }
     }
-    scoreCal(missed,combo);
+
 }
 
 void disable_input_echo() //关闭输入回显
@@ -424,7 +522,7 @@ void restore_input_echo() //开启输入回显
     SetConsoleMode(hInput, mode);
 }
 
-void clearBuffer() //清空屏幕缓冲区
+void clearBuffer() //清空屏幕缓冲区,同时绘制边界线
 {
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
@@ -767,7 +865,8 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
         CHARTINFO.tracklost = false ;
         CHARTINFO.status = 0;
     }
-
+    
+    if (CHARTINFO.model == 2) CHARTINFO.recall = 100;
     audioInit();
   
     gameOpenRender();
@@ -776,6 +875,12 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     ma_sound_get_length_in_seconds(&sound,& CHARTINFO.total_duration);
 
     while (true){
+        if (CHARTINFO.model == 2 && CHARTINFO.tracklost){
+            ma_sound_stop(&sound);
+            ma_sound_uninit(&sound);
+            goto EXIT;
+            }
+
         if (CHARTINFO.proc >= CHARTINFO.total_duration) break;
         if (IS_DOWN(VK_ESCAPE) ){        
             CHARTINFO.status = 1;
@@ -798,9 +903,9 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
 
     Sleep(2000);
 
+    EXIT:
     gameOverRender();
 
-    EXIT:
     CHARTINFO = chartinfo (); //清空CHARTINFO
 }
 
@@ -891,7 +996,17 @@ void pauseChart()//暂停谱面播放,处理按下esc后的行为,此函数处�
 
 
 
-int main(){
+int main(int argc ,char * argv[]){
+
+    if (argc>1){
+        for (int i =0 ; i <argc ;i++){
+            std::string arg = argv[i];
+            if (arg == "-autoplay"|| arg=="--autoplay"
+                || arg == "autoplay")
+                AUTOPLAY = true;
+        }
+    }
+
     init();
     playChart("chart/test.json","chart/test.wav");
     Sleep(10000);

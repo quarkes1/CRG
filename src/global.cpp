@@ -21,6 +21,8 @@ double speed = 0.02 ;
 
 bool g_audioInited {false};
 
+bool AUTOPLAY {false};
+
 char track1 = 'D';
 char track2 = 'F';
 char track3 = 'J';

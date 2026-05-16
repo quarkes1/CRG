@@ -123,6 +123,16 @@ const std::vector<std::string> One = {
     "      "
 };
 
+const std::vector<std::string> end = {
+    "                    ________                         ",
+    "                   /        \\                        ",
+    "==================/          \\=======================",
+    "                 /            \\                      ",
+    "=================\\            /======================",
+    "                  \\          /                       ",
+    "                   \\________/                        "
+};
+
 void drawAscii(int _start_x , int _start_y , const std::vector<std::string>& _asc , WORD _color )
 {
     for (int y = 0; y < _asc.size(); ++y) {

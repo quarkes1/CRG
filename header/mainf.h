@@ -33,7 +33,7 @@ int64_t getNowMs();
 int64_t getGameTime();
 void load_chart(const std::string& _path);
 void drawString(int _abs_pos_x, int _abs_pos_y, const char* _str, WORD _color);
-void scoreCal(bool _missed,bool _combo);
+void scoreCal(bool _missed,bool _combo , int _hitTrack);
 void empty(const int _x1,const int _x2 ,const int _y1, const int _y2);
 void spEffectRender(int64_t _time);
 void playInfoRender();
@@ -67,8 +67,12 @@ struct chartinfo
     int choice{0}; ////1继续 2重来 3退出 （在暂停状态下的行为）
 
     bool tracklost{false};
+    int recall{0}; 
+    int model{2}; //设置谱面难度，1为正常，0为简单，2为困难
+
     float proc{-1};//播放进度(s)
     float total_duration{0};//总时长(s)
 };
 
 extern chartinfo CHARTINFO;
+
