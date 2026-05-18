@@ -15,3 +15,6 @@
 
 void gameOpenRender();
 void gameOverRender();
+void normalChangeRender();
+
+void ChartChoiceRender();

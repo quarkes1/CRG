@@ -36,3 +36,7 @@ int _far_ = 80 ;
 int64_t gameStart;
 
 int64_t ChartAudioStart;//记录谱面音乐开始播放的时间，用于对齐谱面
+
+MouseState MOUSESTATE{};//记录全局鼠标状态；需要每帧更新
+
+HANDLE hInput;

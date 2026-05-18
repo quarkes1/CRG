@@ -142,6 +142,7 @@ std::vector<line>LINE{};
 
 void gameOpenRender()//绘制开始时的效果
 {   
+    LINE = std::vector<line> ();
     WORD color = White;
     int64_t starttime = getNowMs();
     char chartype {'#'};
@@ -254,7 +255,7 @@ void gameOpenRender()//绘制开始时的效果
 
 void gameOverRender()//绘制结束时的效果
 {
-     
+    LINE = std::vector<line> ();
     WORD color = White;
     char chartype {'#'};
     double duration {500} ;//该动画持续的时间
@@ -306,10 +307,11 @@ void gameOverRender()//绘制结束时的效果
         playInfoRender();
         spEffectRender(getGameTime());
 
-        //drawAscii(2, MARGIN_T + RAIl_HEIGHT/2 , end , White);
+        
+        
         if (now -s >= 200){
-            if (CHARTINFO.tracklost) drawAscii (MARGIN_L, MARGIN_T + RAIl_HEIGHT/2 , TL ,White);
-            else  drawAscii (MARGIN_L, MARGIN_T + RAIl_HEIGHT/2 , TC ,White);
+            if (CHARTINFO.tracklost) drawAscii (MARGIN_L-5, MARGIN_T + RAIl_HEIGHT/2 -4  , TL ,White);
+            else  drawAscii (MARGIN_L-5, MARGIN_T + RAIl_HEIGHT/2 -4 , TC ,White);
         }
         render();
         Sleep(1);
@@ -398,4 +400,141 @@ void gameOverRender()//绘制结束时的效果
 
     showScore();
     render();
+}
+
+void normalChangeRender()//一般转场效果
+{
+    LINE = std::vector<line> ();
+    WORD color = White;
+    int64_t starttime = getNowMs();
+    char chartype {'#'};
+    double duration {500} ;//该动画持续的时间
+    double pause {2500};
+    const int center = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
+    const double Y = MARGIN_T + RAIl_HEIGHT + 5; 
+    const int BORDER_r = MARGIN_L + RAIL_WIDTH * 4 + 4 +35;
+
+    const int bias = 30 ;
+    const int subbias = 20 ; //转角偏移的程度
+    int c_X = center+bias ; //转角的x 坐标
+    int c_Y = (Y/5)*3 ; //转角的y 坐标
+
+    double v = center / duration;
+    
+    for (int y=1; y<c_Y ;y ++){
+        double ratio = 1 - y/double(c_Y);
+        line left{},right{};
+        left.is_left = true; right.is_left = false;
+        int x = c_X - round2int( subbias*ratio );
+        left.x = x ; right.x = x;
+        left.y = y; right.y =y;
+        LINE.push_back(left);
+        LINE.push_back(right);
+    }
+
+    for (int y=c_Y ; y<Y ; y++){
+        double ratio = (y-c_Y)/double(Y -c_Y);
+        line left{},right{};
+        left.is_left = true; right.is_left = false;
+        int x = c_X - round2int( subbias*ratio);
+        left.x = x ; right.x = x;
+        left.y = y; right.y =y;
+        LINE.push_back(left);
+        LINE.push_back(right);
+    }
+    
+    const int64_t beat { starttime + duration} ;
+    const int64_t endbeat {starttime + duration*2 + pause};
+
+
+    //合上
+    audioInit();
+    audioPlay("sound/screenclose.wav");
+    while (true){
+      int64_t now = getNowMs();
+      if (now>=beat) break;
+      clearBuffer();
+      for (line& l :LINE){
+          if (l.is_left){
+              int x_pos = l.x - round2int( (beat - now)* v );
+              for (int x = x_pos - l.len; x <= x_pos ;x++){
+                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                    drawChar(x , l.y ,chartype , color);
+              }
+          }
+          else{
+              int x_pos = l.x + round2int( (beat-now)*v );
+              for (int x = x_pos+ l.len ; x>= x_pos ; x--){
+                  if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                    drawChar(x , l.y ,chartype , color);
+              }
+          }        
+      }
+      render();
+      Sleep(1);
+   }
+    Sleep(pause);
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
+
+    int64_t t = getNowMs();
+    int eps = 500; //用来纠正程序运行时间的误差
+
+
+   //打开
+    audioInit();
+    audioPlay("sound/screenopen.wav");
+    while (true){
+        int64_t now = getNowMs();
+        if (now>=endbeat+eps) break;
+        clearBuffer();
+        lineRender();
+        playInfoRender();
+        for (line& l :LINE){
+            if (l.is_left){
+                int x_pos = l.x - round2int( duration*v) + round2int( (endbeat - now)*v );
+                for (int x = x_pos - l.len; x <=x_pos ;x++){
+                    if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                        drawChar(x , l.y ,chartype , color);
+                }
+            }
+            else{
+                int x_pos = l.x + round2int(duration*v) - round2int( (endbeat-now)*v );
+                for (int x = x_pos+ l.len ; x>= x_pos ; x--){
+                    if (x>=0 && l.y>=0 && x<=BORDER_r && l.y<=Y)
+                        drawChar(x , l.y ,chartype , color);
+                }
+            }        
+        }
+        render();
+        Sleep(1);
+    }
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
+}
+
+struct Chart
+{
+    std::string chartname;  //谱面名称，loadChart写入CHARTINFO
+    std::vector<std::string> levels; //不同难度下的谱面路径
+    std::string soundtrack; //.wav路径
+};
+
+std::vector<Chart> CHART;
+
+void ChartChoiceRender()//选曲界面
+{   
+    //加载chart下的所有谱面
+    std::vector<std::string> chartfolders = getFoldersInDir("chart");
+    for (auto folder : chartfolders){
+        Chart ct;
+        ct.chartname = folder;
+        std::string path = "chart/" +folder;
+        ct.levels = getFilesInDir(path,".json");
+        std::vector<std::string> sts = getFilesInDir(path,".wav");
+        ct.soundtrack = sts[0];
+        CHART.push_back(ct);
+    }
+    //谱面滚动/选中
+
 }

@@ -505,11 +505,12 @@ void judge(int64_t _time) // 打击判定,记录得分
 
 void disable_input_echo() //关闭输入回显
 {
-    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+    hInput = GetStdHandle(STD_INPUT_HANDLE);
     DWORD mode;
     GetConsoleMode(hInput, &mode);
     // 去掉 回显 + 行缓冲（按回车才读）
     mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+    mode |= ENABLE_MOUSE_INPUT;
     SetConsoleMode(hInput, mode);
 }
 
@@ -652,8 +653,112 @@ void audioPlay(const std::string & _audioPath) //播放音频
     ma_sound_start(&sound);
 }
 
+void updateMouse()//读取鼠标事件 
+{   
+    MOUSESTATE.wheel = 0;
+    MOUSESTATE.leftDown = false;
+    MOUSESTATE.rightDown = false ;
+    INPUT_RECORD ir[128]; 
+    DWORD readCount;
+    // 非阻塞读取控制台输入
+    PeekConsoleInput(hInput, ir, 128, &readCount);
 
-//=================================转谱部分================
+    for (DWORD i = 0; i < readCount; i++) {
+        if (ir[i].EventType == MOUSE_EVENT) {
+            MOUSE_EVENT_RECORD& mer = ir[i].Event.MouseEvent;
+        
+            MOUSESTATE.x = mer.dwMousePosition.X;
+            MOUSESTATE.y = mer.dwMousePosition.Y;
+
+            // 左键按下/抬起
+            if (mer.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
+                MOUSESTATE.leftDown = true;
+            else
+                MOUSESTATE.leftDown = false;
+
+            // 右键按下/抬起
+            if (mer.dwButtonState & RIGHTMOST_BUTTON_PRESSED)
+                MOUSESTATE.rightDown = true;
+            else
+                MOUSESTATE.rightDown = false;
+
+            // 4. 滚轮滚动
+            if (mer.dwEventFlags & MOUSE_WHEELED) {
+                // 高16位是滚动值：正=上滚，负=下滚
+                int delta = (short)HIWORD(mer.dwButtonState);
+                MOUSESTATE.wheel = delta > 0 ? 1 : -1;
+            } else {
+                MOUSESTATE.wheel = 0;
+            }
+        }
+        // 读取完就清空，避免重复触发
+        FlushConsoleInputBuffer(hInput);
+    }
+}
+
+//================文件操作===============
+
+std::vector<std::string> getFilesInDir(const std::string& _dirPath, const std::string& _suffix = "")/*获取指定文件夹下的所有文件名 arg ：文件夹路径、过滤后缀（空=不过滤，例：".json" 只读json文件）->vector <string> 文件名列表（带后缀，如："1.json"）*/
+{
+    std::vector<std::string> fileList;
+
+    // 目录不存在 → 返回空
+    if (!fs::exists(_dirPath) || !fs::is_directory(_dirPath)) {
+        return fileList;
+    }
+
+    // 遍历目录（只遍历第一层）
+    for (const auto& entry : fs::directory_iterator(_dirPath))
+    {
+        // 只取文件，跳过文件夹
+        if (!entry.is_regular_file()) continue;
+
+        std::string fileName = entry.path().filename().string();
+
+        // 过滤后缀（需要的话）
+        if (!_suffix.empty()) {
+            if (fileName.size() >= _suffix.size() &&
+                fileName.compare(fileName.size() - _suffix.size(), _suffix.size(), _suffix) == 0)
+            {
+                fileList.push_back(fileName);
+            }
+        }
+        else {
+            fileList.push_back(fileName);
+        }
+    }
+    return fileList;
+}
+
+std::vector<std::string> getFoldersInDir(const std::string& _dirPath) /*读取文件夹下的子文件名 ->vector<string> foldlist*/
+{
+    std::vector<std::string> folderList;
+
+    // 目录不存在 → 返回空
+    if (!fs::exists(_dirPath) || !fs::is_directory(_dirPath)) {
+        return folderList;
+    }
+
+    // 遍历目录
+    for (const auto& entry : fs::directory_iterator(_dirPath))
+    {
+        // 只取文件夹，跳过文件
+        if (!entry.is_directory()) continue;
+
+        std::string folderName = entry.path().filename().string();
+
+        // 跳过系统特殊目录 . 和 ..
+        if (folderName == "." || folderName == "..") continue;
+
+        folderList.push_back(folderName);
+    }
+    return folderList;
+}
+
+//======================================
+
+
+//=================读取谱面================
 /* Malody 的msv json记谱格式为
 
       "note": [
@@ -781,7 +886,7 @@ void load_chart(const std::string& _path) //加载json谱面-> vector<note>,vect
     PARTICLE.push_back(p);
     }
 }
-//==========================================================================
+//=========================================
 
 void init()//全局初始化
 {   
@@ -839,7 +944,7 @@ void PLAYRENDER()//游戏进程中每一帧所有过程渲染
 }
 
 
-
+//游戏内主循环在此函数
 void playChart(const std::string& _chartPath,const std::string& _audioPath )//此函数完成所有播放工作。包括开始结束动画，分数显示。容器清空等。
 {   
     CHARTINFO = chartinfo ();
@@ -875,6 +980,7 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     ma_sound_get_length_in_seconds(&sound,& CHARTINFO.total_duration);
 
     while (true){
+        updateMouse();
         if (CHARTINFO.model == 2 && CHARTINFO.tracklost){
             ma_sound_stop(&sound);
             ma_sound_uninit(&sound);
@@ -900,6 +1006,8 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
         PLAYRENDER();
         Sleep(8);
     }
+    if (CHARTINFO.model == 1 && CHARTINFO.recall <= 65 ) CHARTINFO.tracklost = true;
+    if (CHARTINFO.model == 0 && CHARTINFO.recall <= 40 ) CHARTINFO.tracklost = true;
 
     Sleep(2000);
 

@@ -66,3 +66,15 @@ extern int _far_ ;
 
 extern int64_t gameStart;
 extern int64_t ChartAudioStart;
+
+struct MouseState
+{
+    int x = 0;          // 游戏绝对坐标 X（左上0,0）
+    int y = 0;          // 游戏绝对坐标 Y
+    bool leftDown = false;  // 左键按下
+    bool rightDown = false; // 右键按下
+    int wheel = 0;      // 滚轮滚动（+上滚 / -下滚）
+};
+
+extern MouseState MOUSESTATE;
+extern HANDLE hInput;

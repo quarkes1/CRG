@@ -12,11 +12,14 @@
 #include <sstream>
 #include <random>
 #include <cstdint>
+#include <filesystem>
 #include "global.h"
 #include "visual.h"
 #include "json.hpp"
 #include "ascii.h"
 #include "miniaudio.h"
+
+namespace fs = std::filesystem;
 
 void judge(int64_t _time);
 void restore_input_echo();
@@ -46,6 +49,10 @@ void PLAYRENDER();
 
 void playChart(const std::string& _chartPath,const std::string& _audioPath );
 void pauseChart();
+void updateMouse();
+
+std::vector<std::string> getFoldersInDir(const std::string& _dirPath) ;
+std::vector<std::string> getFilesInDir(const std::string& _dirPath, const std::string& _suffix = "");
 
 struct chartinfo
 {
