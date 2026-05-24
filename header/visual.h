@@ -17,4 +17,5 @@ void gameOpenRender();
 void gameOverRender();
 void normalChangeRender();
 
+
 std::vector<std::string> ChartChoiceRender();

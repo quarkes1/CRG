@@ -512,6 +512,7 @@ void normalChangeRender()//一般转场效果
     ma_sound_uninit(&sound);
 }
 
+
 struct Chart
 {
     std::string chartname;  //谱面名称，loadChart写入CHARTINFO
@@ -556,10 +557,13 @@ struct level{
     int y;
 };
 
+
+
 std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路径 ->vec <str> chartpath audiopath
 {   
     CHART.clear();
     const char* CURSORTYPE = ">>>";
+
     //加载chart下的所有谱面,写入路径
     std::vector<std::string> chartfolders = getFoldersInDir("chart");
     int i {0};
@@ -567,6 +571,23 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
         Chart ct;
         ct.chartname = folder;
         std::string path = "chart/" +folder;
+
+        //自动更改mc后缀为json
+        std::vector<std::string> mcfiles = getFilesInDir(path,".mc");
+        if (!mcfiles.empty()) {
+            for (auto & mcf : mcfiles){
+                size_t lastDot = mcf.find_last_of('.');
+            if (lastDot == std::string::npos) continue;
+
+
+            std::string old_full_path = path + "/" + mcf; 
+            std::string new_filename = mcf.substr(0, lastDot) + ".json";
+            std::string new_full_path = path + "/" + new_filename; 
+
+            renameFile(old_full_path, new_full_path);
+            }
+        }
+        //
 
         ct.levelpath = getFilesInDir(path,".json");
 
@@ -625,18 +646,15 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
         const int VISIBLE_BOTTOM = MARGIN_T + 3 * 5; // 固定5行可视区域
         if (IS_DOWN(VK_UP) && abs(t1 - t0) >= 100) {
             if (r_cursor) {
-                // 规则：光标没到顶 → 移动光标；到顶 → 滚动列表，光标不动
                 if (r_cursorY > MARGIN_T) {
                     r_cursorY -= 3;    
                 } 
-                // 列表上方还有内容，才允许向上滚动（防止滚出空白）
                 else if (start_y < MARGIN_T) {
                     start_y -= 3; 
                     end_y -= 3;     
                 }
             }
             if (l_cursor) {
-                // 等级光标同规则
                 if (l_cursorY > MARGIN_T) {
                     l_cursorY -= 3;   
                 }
@@ -650,18 +668,15 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
 
         if (IS_DOWN(VK_DOWN) && abs(t1 - t0) >= 100) {
             if (r_cursor) {
-                // 规则：光标没到底 → 移动光标；到底 → 滚动列表，光标不动
                 if (r_cursorY < VISIBLE_BOTTOM) {
                     r_cursorY += 3;    
                 } 
-                // 列表下方还有内容，才允许向下滚动（防止滚出空白）
                 else if (end_y > VISIBLE_BOTTOM) {
                     start_y += 3;
                     end_y += 3;     
                 }
             }
             if (l_cursor) {
-                // 等级光标同规则
                 if (l_cursorY < VISIBLE_BOTTOM) {
                     l_cursorY += 3;   
                 } 
@@ -676,7 +691,6 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
         if (IS_DOWN(VK_LEFT) ){
             l_cursor = true;
             r_cursor = false;
-            r_cursorY = MARGIN_T;
         }
         if (IS_DOWN(VK_RIGHT)){
             l_cursor = false;

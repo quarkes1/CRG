@@ -14,6 +14,7 @@
 #define MA_ENABLE_MP3 1    
 #define MA_ENABLE_FLAC 1  
 #define MINIAUDIO_IMPLEMENTATION
+#define MA_ENABLE_VORBIS
 #include "../header/miniaudio.h"
 #include "../header/mainf.h"
 
@@ -755,6 +756,7 @@ std::vector<std::string> getFoldersInDir(const std::string& _dirPath) /*读取�
     return folderList;
 }
 
+
 //======================================
 
 
@@ -1107,14 +1109,16 @@ void pauseChart()//暂停谱面播放,处理按下esc后的行为,此函数处�
 
 
 
-int main(int argc ,char * argv[]){
-
+int main(int argc ,char * argv[])
+{
     if (argc>1){
         for (int i =0 ; i <argc ;i++){
             std::string arg = argv[i];
             if (arg == "-autoplay"|| arg=="--autoplay"
                 || arg == "autoplay")
                 AUTOPLAY = true;
+
+
         }
     }
 
