@@ -7,6 +7,7 @@
 
 
 #include "../header/visual.h"
+#define IS_DOWN(key) ((GetAsyncKeyState(key) & 0x8000) != 0)  //用于监听按键信息 ->bool
 
 inline int round2int(double val) //这个是用来避免后面截断的误差加的
 {
@@ -306,9 +307,7 @@ void gameOverRender()//绘制结束时的效果
         lineRender();
         playInfoRender();
         spEffectRender(getGameTime());
-
-        
-        
+   
         if (now -s >= 200){
             if (CHARTINFO.tracklost) drawAscii (MARGIN_L-5, MARGIN_T + RAIl_HEIGHT/2 -4  , TL ,White);
             else  drawAscii (MARGIN_L-5, MARGIN_T + RAIl_HEIGHT/2 -4 , TC ,White);
@@ -516,25 +515,223 @@ void normalChangeRender()//一般转场效果
 struct Chart
 {
     std::string chartname;  //谱面名称，loadChart写入CHARTINFO
-    std::vector<std::string> levels; //不同难度下的谱面路径
+    std::vector<std::string> levels; //不同难度
+    std::vector<std::string> levelpath; 
     std::string soundtrack; //.wav路径
+    int index {0}; //顺序 0开始
+    int y{0}; //显示位置（左上角的坐标
+    int x{0};
+    std::string chosedlevel{};
 };
 
-std::vector<Chart> CHART;
+std::vector<Chart> CHART;  //->ChartChoiceRender() 
 
-void ChartChoiceRender()//选曲界面
+inline void drawChartChoice(std::string _name , int _x, int _y)//绘制相应的谱面名称（含边框） arg: 左上角 x ,y
+{
+    const int width = 20;
+
+    //绘制边框
+    for (int x = _x ;x <= _x+ width ; x++) drawChar(x , _y , '-',White);
+    drawChar(_x -1 , _y+1 ,'/', White); drawChar(_x + width -1 , _y+1 , '/' , White);
+    for (int x = _x -2 ;x <= _x+ width-2 ; x++) drawChar(x , _y+2 , '-',White);
+
+    const char * out = _name.substr(0, width).c_str();
+    drawString(_x,_y+1 , out , White);
+}
+
+inline bool renameFile(const std::string& _old_path, const std::string& _new_path)//用于自动更改chart后缀为json
+{
+    try {
+        if (fs::exists(_old_path) && !fs::exists(_new_path)) {
+            fs::rename(_old_path, _new_path);
+            return true;
+        }
+    } catch (...) {}
+    return false;
+}
+
+struct level{
+    std::string levelpath;
+    std::string content;
+    int y;
+};
+
+std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路径 ->vec <str> chartpath audiopath
 {   
-    //加载chart下的所有谱面
+    CHART.clear();
+    const char* CURSORTYPE = ">>>";
+    //加载chart下的所有谱面,写入路径
     std::vector<std::string> chartfolders = getFoldersInDir("chart");
-    for (auto folder : chartfolders){
+    int i {0};
+    for (auto & folder : chartfolders){
         Chart ct;
         ct.chartname = folder;
         std::string path = "chart/" +folder;
-        ct.levels = getFilesInDir(path,".json");
-        std::vector<std::string> sts = getFilesInDir(path,".wav");
-        ct.soundtrack = sts[0];
+
+        ct.levelpath = getFilesInDir(path,".json");
+
+        if (fs::directory_iterator(path) != fs::directory_iterator())
+            for (auto &level : ct.levelpath){
+                std::string pth = "chart/"+folder + "/"+ level;
+                std::ifstream file(pth) ; 
+                if (!file.is_open()) {
+                    std::cout << "错误：无法打开谱面文件" << pth<<std::endl;
+                    continue;
+                }
+                json j;
+                file >> j;
+                ct.levels.push_back(j["meta"]["version"]);
+            }
+
+            
+        std::vector<std::string> sts = getFilesInDir(path,".wav"); //若有多个，取第一个
+        if (!sts.empty())
+            ct.soundtrack = sts[0];
+        else 
+            ct.soundtrack = "";
+        ct.index = i++;
         CHART.push_back(ct);
     }
-    //谱面滚动/选中
 
+    //谱面滚动/选中（渲染循环）
+
+    int base_x = MARGIN_L + RAIL_WIDTH * 4 + 20 ;
+    int base_y = MARGIN_T;
+    int r_cursorY = MARGIN_T;
+    int l_cursorY = MARGIN_T;
+    int start_y {MARGIN_T}; //顶端坐标
+    int end_y {MARGIN_T + i*3} ; //底端坐标
+
+    bool l_cursor {false};
+    bool r_cursor {true} ;
+
+    Chart choosingChart {};
+    level choosingLevel {};
+
+    int64_t t0 = getNowMs(); //记录上次按键的时间，避免帧间持续触发
+
+    while (true){
+        updateMouse();
+        int64_t t1 = getNowMs();
+
+
+        if (MOUSESTATE.wheel>0){
+            start_y -= 3;
+        }
+        if (MOUSESTATE.wheel<0){
+            start_y += 3;
+        }
+
+        const int VISIBLE_BOTTOM = MARGIN_T + 3 * 5; // 固定5行可视区域
+        if (IS_DOWN(VK_UP) && abs(t1 - t0) >= 100) {
+            if (r_cursor) {
+                // 规则：光标没到顶 → 移动光标；到顶 → 滚动列表，光标不动
+                if (r_cursorY > MARGIN_T) {
+                    r_cursorY -= 3;    
+                } 
+                // 列表上方还有内容，才允许向上滚动（防止滚出空白）
+                else if (start_y < MARGIN_T) {
+                    start_y -= 3; 
+                    end_y -= 3;     
+                }
+            }
+            if (l_cursor) {
+                // 等级光标同规则
+                if (l_cursorY > MARGIN_T) {
+                    l_cursorY -= 3;   
+                }
+                else if (start_y < MARGIN_T) {
+                    start_y -= 3; 
+                    end_y -= 3;    
+                }
+            }
+            t0 = getNowMs();
+        }
+
+        if (IS_DOWN(VK_DOWN) && abs(t1 - t0) >= 100) {
+            if (r_cursor) {
+                // 规则：光标没到底 → 移动光标；到底 → 滚动列表，光标不动
+                if (r_cursorY < VISIBLE_BOTTOM) {
+                    r_cursorY += 3;    
+                } 
+                // 列表下方还有内容，才允许向下滚动（防止滚出空白）
+                else if (end_y > VISIBLE_BOTTOM) {
+                    start_y += 3;
+                    end_y += 3;     
+                }
+            }
+            if (l_cursor) {
+                // 等级光标同规则
+                if (l_cursorY < VISIBLE_BOTTOM) {
+                    l_cursorY += 3;   
+                } 
+                else if (end_y > VISIBLE_BOTTOM) {
+                    start_y += 3; 
+                    end_y += 3;   
+                }
+            }
+            t0 = getNowMs();
+        }
+
+        if (IS_DOWN(VK_LEFT) ){
+            l_cursor = true;
+            r_cursor = false;
+            r_cursorY = MARGIN_T;
+        }
+        if (IS_DOWN(VK_RIGHT)){
+            l_cursor = false;
+            r_cursor = true;
+            l_cursorY = MARGIN_T;
+        }
+
+        clearBuffer();
+
+        //绘制光标
+        if (r_cursor){
+            int cursor_x = base_x - (r_cursorY  - base_y) - 5;
+            drawString(cursor_x, r_cursorY + 1, CURSORTYPE , White);
+        }
+        if (l_cursor){
+            int cursor_x = base_x - (l_cursorY  - base_y) - 5 -35;
+            drawString(cursor_x, l_cursorY +1 , CURSORTYPE , White);
+        }
+
+        for (auto & ct : CHART){
+            ct.y = ct.index*3 + start_y;
+            ct.x =  base_x - (ct.y  - base_y) ;
+            if (ct.y >= MARGIN_T && ct.y <= MARGIN_T + 3*5) drawChartChoice(ct.chartname , ct.x ,ct.y);
+            if (ct.y == r_cursorY){
+                choosingChart = ct;
+            }
+        }
+
+        int i {0};
+
+        for (auto & lv : choosingChart.levels){
+            level l;
+            l.y= i*3 + MARGIN_T;
+            l.content = lv;
+            int x = base_x - (l.y  - base_y) - 35 ;
+            if (l.y >= MARGIN_T && l.y <= MARGIN_T + 3*5) drawChartChoice(lv , x , l.y);
+            if (l.y == l_cursorY){
+                choosingLevel = l;
+                choosingLevel.levelpath = choosingChart.levelpath[i];
+            }
+            i++;
+        }
+
+        if ( (IS_DOWN(VK_RETURN)||IS_DOWN(VK_SPACE)) && l_cursor
+            && choosingChart.chartname != "" && choosingLevel.content != ""){
+            goto RETURN;
+        }
+        render();
+        Sleep(8);
+    }
+    RETURN:
+    std::vector <std::string> path_vec {};
+    std::string chart_path = "chart/" + choosingChart.chartname + "/" + choosingLevel.levelpath;
+    std::string audio_path =  "chart/" + choosingChart.chartname + "/" + choosingChart.soundtrack;
+    path_vec.push_back(chart_path);
+    path_vec.push_back(audio_path);
+    return path_vec;
 }

@@ -691,9 +691,9 @@ void updateMouse()//读取鼠标事件
                 MOUSESTATE.wheel = 0;
             }
         }
-        // 读取完就清空，避免重复触发
-        FlushConsoleInputBuffer(hInput);
     }
+    // 读取完就清空，避免重复触发
+    FlushConsoleInputBuffer(hInput);
 }
 
 //================文件操作===============
@@ -981,6 +981,7 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
 
     while (true){
         updateMouse();
+
         if (CHARTINFO.model == 2 && CHARTINFO.tracklost){
             ma_sound_stop(&sound);
             ma_sound_uninit(&sound);
@@ -1002,6 +1003,8 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
             CHARTINFO.choice ==0 ;
             goto EXIT;
         }
+
+
         ma_sound_get_cursor_in_seconds(&sound, &CHARTINFO.proc); //追踪音频播放进度->float (s)
         PLAYRENDER();
         Sleep(8);
@@ -1116,7 +1119,8 @@ int main(int argc ,char * argv[]){
     }
 
     init();
-    playChart("chart/test.json","chart/test.wav");
+    std::vector<std::string> Path =  ChartChoiceRender();
+    playChart(Path[0],Path[1]);
     Sleep(10000);
 }
     

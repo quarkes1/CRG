@@ -52,7 +52,7 @@ void pauseChart();
 void updateMouse();
 
 std::vector<std::string> getFoldersInDir(const std::string& _dirPath) ;
-std::vector<std::string> getFilesInDir(const std::string& _dirPath, const std::string& _suffix = "");
+std::vector<std::string> getFilesInDir(const std::string& _dirPath, const std::string& _suffix );
 
 struct chartinfo
 {
