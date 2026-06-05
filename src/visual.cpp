@@ -755,4 +755,5 @@ void MenuRender()
 
 void SettingRender()
 {
+    
 }
