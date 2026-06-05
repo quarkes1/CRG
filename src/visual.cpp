@@ -557,8 +557,6 @@ struct level{
     int y;
 };
 
-
-
 std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路径 ->vec <str> chartpath audiopath
 {   
     CHART.clear();
@@ -748,4 +746,13 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
     path_vec.push_back(chart_path);
     path_vec.push_back(audio_path);
     return path_vec;
+}
+
+void MenuRender()
+{
+
+}
+
+void SettingRender()
+{
 }
