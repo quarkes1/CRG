@@ -78,3 +78,4 @@ struct MouseState
 
 extern MouseState MOUSESTATE;
 extern HANDLE hInput;
+extern int GAMESTATUS ;

@@ -176,16 +176,6 @@ notes nt; //仅作为实例化供调用函数使用
 
 chartinfo CHARTINFO{};//记录当前谱面的信息，需要结束后清空
 
-struct particle
-{
-    std::string content;
-    int x{0};
-    double y{0};
-    int len{0};
-    int64_t beat;
-    bool activ{false};
-};
-
 std::vector <particle> PARTICLE;//记录当前谱面生成的粒子，需要结束时清空
 
 void empty(const int _x1,const int _x2 ,const int _y1, const int _y2)//清空指定区域内可能的特效
@@ -257,23 +247,7 @@ void playInfoRender()//绘制游戏信息
  
 }
 
-template<typename T>
-T getRandomElem(const std::vector<T>& vec)//用于在vector中随机选元素
-{
-    if (vec.empty()) {
-        // 空容器时返回默认构造的对象，避免崩溃
-        static T defaultVal{};
-        return defaultVal;
-    }
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    // 生成 [0, size-1] 随机下标
-    std::uniform_int_distribution<> dis(0, (int)vec.size() - 1);
-    
-    return vec[dis(gen)];
-}
-
-void spEffectRender(int64_t _time)//绘制轨道两边的下落弹幕效果
+void spEffectRender(int64_t _time,bool _openrender = false)//绘制轨道两边的下落弹幕效果
 {
     WORD color = White;
     int border = MARGIN_L + RAIL_WIDTH * 4 + 4; 
@@ -286,6 +260,20 @@ void spEffectRender(int64_t _time)//绘制轨道两边的下落弹幕效果
     static std::vector<particle> activeParticle;
     static int remain{0};
     
+    if (_openrender){
+        PARTICLE.clear();
+        border = 0 ;
+        maxnum*=5;
+        while (PARTICLE.size()<200){
+            particle pt; 
+            int len = rand()%(maxlen - minlen) + minlen;
+            char str [len +1];
+            for (int i = 0 ; i<len ; i++) str[i] = rand()%10;
+            str[len]= '\0';
+            pt.content = "0x"+ std::string(str);
+            PARTICLE.push_back(pt);
+        }
+    }
     
     if (remain < maxnum && !PARTICLE.empty()) {
         int add = maxnum - remain;  
@@ -294,7 +282,7 @@ void spEffectRender(int64_t _time)//绘制轨道两边的下落弹幕效果
             particle pt = getRandomElem(PARTICLE);
             // 过滤空内容的粒子
             if (pt.content.empty()) {
-                pt.content = "CRG"; 
+                pt.content = "MALOEA"; 
             }
             activeParticle.push_back(pt);
             remain++;
@@ -946,7 +934,7 @@ void PLAYRENDER()//游戏进程中每一帧所有过程渲染
 }
 
 
-//游戏内主循环在此函数
+//谱面内主循环在此函数
 void playChart(const std::string& _chartPath,const std::string& _audioPath )//此函数完成所有播放工作。包括开始结束动画，分数显示。容器清空等。
 {   
     CHARTINFO = chartinfo ();
@@ -1020,6 +1008,9 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     gameOverRender();
 
     CHARTINFO = chartinfo (); //清空CHARTINFO
+    PARTICLE.clear();
+    GAMESTATUS = 1 ;
+    normalChangeRender();
 }
 
 
@@ -1123,8 +1114,25 @@ int main(int argc ,char * argv[])
     }
 
     init();
-    std::vector<std::string> Path =  ChartChoiceRender();
-    playChart(Path[0],Path[1]);
-    Sleep(10000);
+
+    StartRender();
+
+    LOOP:
+    while (true){
+        if (GAMESTATUS == 0) {
+            MenuRender();
+        }
+        if (GAMESTATUS == 1) {
+            std::vector<std::string> Path =  ChartChoiceRender();
+            if (GAMESTATUS != 1) goto LOOP;
+            playChart(Path[0],Path[1]);
+        }
+        if (GAMESTATUS == 2){
+            SettingRender();
+        }
+
+        Sleep(8);
+    }
+
 }
     

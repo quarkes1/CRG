@@ -306,7 +306,7 @@ void gameOverRender()//绘制结束时的效果
         clearBuffer();
         lineRender();
         playInfoRender();
-        spEffectRender(getGameTime());
+        spEffectRender(getGameTime(),false);
    
         if (now -s >= 200){
             if (CHARTINFO.tracklost) drawAscii (MARGIN_L-5, MARGIN_T + RAIl_HEIGHT/2 -4  , TL ,White);
@@ -397,8 +397,16 @@ void gameOverRender()//绘制结束时的效果
     if (CHARTINFO.tracklost) audioPlay("sound/tracklost.wav");
     else audioPlay("sound/trackcomplete.wav");
 
-    showScore();
-    render();
+    while (true) {
+        if (IS_DOWN(VK_ESCAPE)) goto RETURN;
+        clearBuffer();
+        showScore();
+        render();
+        Sleep(8);
+    }
+    RETURN:
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
 }
 
 void normalChangeRender()//一般转场效果
@@ -487,8 +495,6 @@ void normalChangeRender()//一般转场效果
         int64_t now = getNowMs();
         if (now>=endbeat+eps) break;
         clearBuffer();
-        lineRender();
-        playInfoRender();
         for (line& l :LINE){
             if (l.is_left){
                 int x_pos = l.x - round2int( duration*v) + round2int( (endbeat - now)*v );
@@ -633,6 +639,7 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
         updateMouse();
         int64_t t1 = getNowMs();
 
+        if (IS_DOWN (VK_ESCAPE)) {GAMESTATUS = 0 ; normalChangeRender() ;return std::vector<std::string>() ;}
 
         if (MOUSESTATE.wheel>0){
             start_y -= 3;
@@ -748,12 +755,127 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
     return path_vec;
 }
 
-void MenuRender()
-{
+void StartRender() //只渲染最开始的logo界面
+{   
+    std::vector<WORD> colorvec = {
+        White,Red, Blue , Yellow ,Green,
+    };
+    WORD color  = getRandomElem(colorvec);
+    audioInit();
+    audioPlay("sound/start.wav");
 
+    //3s 19s //  A HARMONY OF LIGHT  AWAITS YOU IN A LOST  WORLD OF MUSICAL CONFLICT
+    int64_t starttime = getGameTime();
+    while (true){
+        if (IS_DOWN(VK_RETURN)||IS_DOWN(VK_SPACE)){ 
+            break;
+        }
+
+        clearBuffer();
+
+        int base_y = 1 ; float deltax = 40; float deltay = 30 ; 
+        float speed = deltax / 6000 ;
+        float speedy= deltay / 5000 ;
+        static int bias_y{0};
+        int64_t gametime = getGameTime();
+        int64_t duration = gametime - starttime;
+        if (duration>=3500 && duration <= 19000){
+            drawAscii(1,base_y + bias_y,st1,White);
+           
+            if (duration > 6500 ){ 
+                static int biasx{0};
+                if (duration > 7000 && duration < 13500) {
+                    biasx = (duration - 6500)*speed;
+                }
+                drawAscii(1-biasx,base_y+5 + bias_y ,st2,White); 
+            } 
+
+
+            if (duration > 13500 ) {
+                if (duration > 14500) bias_y = (duration - 14500)*speedy ; 
+                drawAscii(1,base_y+10 + bias_y,st3 ,White);
+            }
+        }
+
+        if (duration >= 19000){
+            spEffectRender (gametime,true);
+            if (duration % 200 == 0 ) color = getRandomElem(colorvec);
+            drawAscii(20,10,logo,color);
+            drawString(38, 16 , "Press Enter to Continue",color);
+        } 
+        render();
+        Sleep(8);
+    }
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
+    normalChangeRender();
 }
 
+void MenuRender() //渲染主界面
+{   
+    MENU:
+    audioInit();
+    audioPlay("sound/menu.wav");
+
+    const int basey = 6;
+    const char* CURSORTYPE = ">>>";
+    // vector存储所有菜单项的Y坐标，新增选项只需在这里添加
+    const std::vector<int> menuY = {basey, basey + 4}; // PLAY, CONFIG
+    int selectedIndex = 0; 
+    bool keyPressed = false; 
+
+    while (true) {
+        clearBuffer();
+
+        if (IS_DOWN(VK_DOWN) && !keyPressed) {
+            if (selectedIndex < menuY.size() - 1) {
+                selectedIndex++;
+                keyPressed = true;
+            }
+        }
+        if (IS_DOWN(VK_UP) && !keyPressed) {
+            if (selectedIndex > 0) {
+                selectedIndex--;
+                keyPressed = true;
+            }
+        }
+
+        drawChartChoice("PLAY", MARGIN_L, menuY[0]);
+        drawChartChoice("CONFIG", MARGIN_L, menuY[1]);
+
+
+        drawString(MARGIN_L - 5 , menuY[selectedIndex] + 1, CURSORTYPE, White);
+
+        if (keyPressed) {
+            Sleep(100); 
+            keyPressed = false;
+        }
+
+        if (IS_DOWN(VK_RETURN) || IS_DOWN(VK_SPACE)) {
+            if (selectedIndex == 0) {
+                GAMESTATUS = 1 ;
+                ma_sound_stop(&sound);
+                ma_sound_uninit(&sound);
+                normalChangeRender();
+                return;
+            }
+            if (selectedIndex == 1) {
+                ma_sound_stop(&sound);
+                ma_sound_uninit(&sound);
+                normalChangeRender();
+                SettingRender();
+                goto MENU; 
+            }
+        }
+        render();
+        Sleep(8);
+    }
+}
+
+
+
 void SettingRender()
-{
-    
+{   
+    drawString(1 ,1 , "setting" , White);
+    if (IS_DOWN(VK_ESCAPE)){ GAMESTATUS = 0 ;normalChangeRender();return;}
 }

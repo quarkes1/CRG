@@ -38,8 +38,26 @@ void load_chart(const std::string& _path);
 void drawString(int _abs_pos_x, int _abs_pos_y, const char* _str, WORD _color);
 void scoreCal(bool _missed,bool _combo , int _hitTrack);
 void empty(const int _x1,const int _x2 ,const int _y1, const int _y2);
-void spEffectRender(int64_t _time);
+void spEffectRender(int64_t _time , bool _openrender );
 void playInfoRender();
+
+template<typename T>
+T getRandomElem(const std::vector<T>& vec)//用于在vector中随机选元素
+{
+    if (vec.empty()) {
+        // 空容器时返回默认构造的对象，避免崩溃
+        static T defaultVal{};
+        return defaultVal;
+    }
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    // 生成 [0, size-1] 随机下标
+    std::uniform_int_distribution<> dis(0, (int)vec.size() - 1);
+    
+    return vec[dis(gen)];
+}
+
+
 
 void audioInit();
 void audioPlay(const char* _audioPath);
@@ -82,4 +100,16 @@ struct chartinfo
 };
 
 extern chartinfo CHARTINFO;
+
+struct particle
+{
+    std::string content;
+    int x{0};
+    double y{0};
+    int len{0};
+    int64_t beat;
+    bool activ{false};
+};
+
+extern std::vector <particle> PARTICLE;
 

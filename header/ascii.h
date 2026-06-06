@@ -22,3 +22,7 @@ extern const std::vector<std::string> Three ;
 extern const std::vector<std::string> Two;
 extern const std::vector<std::string> One;
 extern const std::vector<std::string> end;
+extern const std::vector<std::string> logo;
+extern const std::vector<std::string> st1;
+extern const std::vector<std::string> st2;
+extern const std::vector<std::string> st3;
