@@ -1,12 +1,15 @@
-# CRG (CLI Rhythem Game) project
+# MALOEA
 
 ## 项目介绍
 
-### 本项目是模仿Malody制作的4k纯控制台音游，完全支持Malody的谱面
+![intro1](/intro_pic/intro1.png)
+
+### 本项目是模仿Malody（和部分Arcaea元素）制作的4k纯控制台音游，完全支持Malody的谱面
 
 ## 目前需要填的坑
 
 - 设置判定难度，键位绑定 ，流速等调节
+- 局域网linkplay
 
 ### 本游戏已经导入了部分Malody的初始谱面。若下载了Malody <a href="https://m.mugzone.net/wiki/1?lang=sc">官网下载</a> ，可以直接导入游戏内的谱面
 

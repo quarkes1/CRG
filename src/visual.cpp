@@ -635,28 +635,32 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
 
     int64_t t0 = getNowMs(); //记录上次按键的时间，避免帧间持续触发
 
+    bool chartchange{false};
+    bool firstloop{true};
     while (true){
         updateMouse();
         int64_t t1 = getNowMs();
 
-        if (IS_DOWN (VK_ESCAPE)) {GAMESTATUS = 0 ; normalChangeRender() ;return std::vector<std::string>() ;}
+        if (IS_DOWN (VK_ESCAPE)) {
+            ma_sound_stop(&sound);
+            ma_sound_uninit(&sound);
+            GAMESTATUS = 0 ; 
+            normalChangeRender() ;
+            return std::vector<std::string>() ;
+        }
 
-        if (MOUSESTATE.wheel>0){
-            start_y -= 3;
-        }
-        if (MOUSESTATE.wheel<0){
-            start_y += 3;
-        }
 
         const int VISIBLE_BOTTOM = MARGIN_T + 3 * 5; // 固定5行可视区域
         if (IS_DOWN(VK_UP) && abs(t1 - t0) >= 100) {
             if (r_cursor) {
                 if (r_cursorY > MARGIN_T) {
-                    r_cursorY -= 3;    
+                    r_cursorY -= 3;   
+                    chartchange = true ; 
                 } 
                 else if (start_y < MARGIN_T) {
                     start_y -= 3; 
                     end_y -= 3;     
+                    chartchange = true ;
                 }
             }
             if (l_cursor) {
@@ -674,11 +678,13 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
         if (IS_DOWN(VK_DOWN) && abs(t1 - t0) >= 100) {
             if (r_cursor) {
                 if (r_cursorY < VISIBLE_BOTTOM) {
-                    r_cursorY += 3;    
+                    r_cursorY += 3;   
+                    chartchange = true ; 
                 } 
                 else if (end_y > VISIBLE_BOTTOM) {
                     start_y += 3;
-                    end_y += 3;     
+                    end_y += 3;   
+                    chartchange = true;  
                 }
             }
             if (l_cursor) {
@@ -724,6 +730,21 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
             }
         }
 
+        
+        //播放右光标停止曲目的音乐
+        std::string choosingAudio =  "chart/" + choosingChart.chartname + "/" + choosingChart.soundtrack;
+        if (chartchange && ! firstloop){
+            ma_sound_stop(&sound);
+            ma_sound_uninit(&sound);
+            audioInit();
+            audioPlay(choosingAudio);
+            chartchange = false ; 
+        } 
+        if (firstloop){
+            audioInit();
+            audioPlay(choosingAudio);
+        }
+
         int i {0};
 
         for (auto & lv : choosingChart.levels){
@@ -739,14 +760,19 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
             i++;
         }
 
+
+
         if ( (IS_DOWN(VK_RETURN)||IS_DOWN(VK_SPACE)) && l_cursor
             && choosingChart.chartname != "" && choosingLevel.content != ""){
             goto RETURN;
         }
+        if (firstloop) firstloop = false;
         render();
         Sleep(8);
     }
     RETURN:
+    ma_sound_stop(&sound);
+    ma_sound_uninit(&sound);
     std::vector <std::string> path_vec {};
     std::string chart_path = "chart/" + choosingChart.chartname + "/" + choosingLevel.levelpath;
     std::string audio_path =  "chart/" + choosingChart.chartname + "/" + choosingChart.soundtrack;
@@ -779,10 +805,20 @@ void StartRender() //只渲染最开始的logo界面
         static int bias_y{0};
         int64_t gametime = getGameTime();
         int64_t duration = gametime - starttime;
+
+        int len = 15;
+        if (duration <= 3300) {
+            std::string bar = "[#########################]";
+            std::string proc = bar.substr(0,int(double(duration/3000.0)*bar.size()));
+            drawString(30, 5, "LOADING...",White);
+            drawString(30, 6 , proc.c_str(), White);
+            drawString(30, 8, "打开声音以获得最佳体验",White);
+        }
+
         if (duration>=3500 && duration <= 19000){
             drawAscii(1,base_y + bias_y,st1,White);
            
-            if (duration > 6500 ){ 
+            if (duration > 6300 ){ 
                 static int biasx{0};
                 if (duration > 7000 && duration < 13500) {
                     biasx = (duration - 6500)*speed;
@@ -814,13 +850,15 @@ void StartRender() //只渲染最开始的logo界面
 void MenuRender() //渲染主界面
 {   
     MENU:
+    WORD color = White ;
+    std::vector<WORD> colorvec = {White , Red , Blue , Yellow ,Green , Magenta} ; 
     audioInit();
     audioPlay("sound/menu.wav");
 
-    const int basey = 6;
+    const int basey = 10;
     const char* CURSORTYPE = ">>>";
     // vector存储所有菜单项的Y坐标，新增选项只需在这里添加
-    const std::vector<int> menuY = {basey, basey + 4}; // PLAY, CONFIG
+    const std::vector<int> menuY = {basey, basey + 4, basey + 8}; // PLAY, CONFIG ,LINKPLAY
     int selectedIndex = 0; 
     bool keyPressed = false; 
 
@@ -840,8 +878,12 @@ void MenuRender() //渲染主界面
             }
         }
 
-        drawChartChoice("PLAY", MARGIN_L, menuY[0]);
+
+        drawAscii(MARGIN_L  + 5 , basey - 6 , logo , color ) ; 
+
+        drawChartChoice("PLAY", MARGIN_L , menuY[0]);
         drawChartChoice("CONFIG", MARGIN_L, menuY[1]);
+        drawChartChoice("LINKPLAY", MARGIN_L, menuY[2]);
 
 
         drawString(MARGIN_L - 5 , menuY[selectedIndex] + 1, CURSORTYPE, White);
