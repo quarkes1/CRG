@@ -1,6 +1,9 @@
 
 #pragma once
 
+extern int DEFAULT_CHARTINFO_MODEL;
+extern double basespeed;
+
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -93,7 +96,7 @@ struct chartinfo
 
     bool tracklost{false};
     int recall{0}; 
-    int model{2}; //设置谱面难度，1为正常，0为简单，2为困难
+    int model{DEFAULT_CHARTINFO_MODEL}; //设置谱面难度，1为正常，0为简单，2为困难
 
     float proc{-1};//播放进度(s)
     float total_duration{0};//总时长(s)

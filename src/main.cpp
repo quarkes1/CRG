@@ -1,4 +1,5 @@
 // CRG (CLI Rhythem Game) project
+// MALOEA
 
 /**
   * 此项目中的坐标相关设定：
@@ -9,6 +10,7 @@
   * 为区分，进行以下规范：
   * 所有形参以 __val 或 _val 的形式命名
   * 所有容器和常量名使用全大写
+  * 除了开屏动画 ，转场在函数结束
 */
 #define MA_ENABLE_OGG 1    
 #define MA_ENABLE_MP3 1    
@@ -194,7 +196,7 @@ void playInfoRender()//绘制游戏信息
     int width = 40;
     empty(BORDER,BORDER+width, MARGIN_T, MARGIN_T+height);
 
-    switch (CHARTINFO.model){
+    switch (DEFAULT_CHARTINFO_MODEL){
         case 0 : recallcolor = Cyan;break;
         case 1 : recallcolor = Blue;break;
         case 2 :{
@@ -357,7 +359,7 @@ void scoreCal(bool _missed,bool _combo, int _hitTrack)//更新CHARTINFO的分数
     //recall 增加
     if (_hitTrack != -1){
         int inc{};
-        switch (CHARTINFO.model){
+        switch (DEFAULT_CHARTINFO_MODEL){
             case 0 : inc = ((CHARTINFO.maxcount/1.5) / 100) * 1.5 ;  break;
             case 1 :case 2 : inc = ((CHARTINFO.maxcount/1.5) / 100); break; 
         }
@@ -370,7 +372,7 @@ void scoreCal(bool _missed,bool _combo, int _hitTrack)//更新CHARTINFO的分数
 void judge(int64_t _time) // 打击判定,记录得分
 {   
     if (CHARTINFO.status == 1) return; //暂停不判定
-    if (CHARTINFO.model == 2  && CHARTINFO.recall == 0){ CHARTINFO.tracklost = true; return ;}
+    if (DEFAULT_CHARTINFO_MODEL == 2  && CHARTINFO.recall == 0){ CHARTINFO.tracklost = true; return ;}
     WORD color = White;
     int hit_track{-1};
     if (IS_DOWN(track1)) {
@@ -429,7 +431,7 @@ void judge(int64_t _time) // 打击判定,记录得分
                     CHARTINFO.miss++;
                     missed = true;
                     int ms{};
-                    switch(CHARTINFO.model){
+                    switch(DEFAULT_CHARTINFO_MODEL){
                         case 0: ms = 2;break;
                         case 1: ms = 4;break;
                         case 2: ms =6 ;break;
@@ -460,7 +462,7 @@ void judge(int64_t _time) // 打击判定,记录得分
                     CHARTINFO.miss++;
                     missed = true ;
                     int ms{};
-                    switch(CHARTINFO.model){
+                    switch(DEFAULT_CHARTINFO_MODEL){
                         case 0: ms = 2;break;
                         case 1: ms = 4;break;
                         case 2: ms =6 ;break;
@@ -474,7 +476,7 @@ void judge(int64_t _time) // 打击判定,记录得分
                 if (_time-nt.beat>_maxjudge_ && !nt.judged) {
                     nt.judged = true ; missed = true ;CHARTINFO.miss++;
                     int ms{};
-                    switch(CHARTINFO.model){
+                    switch(DEFAULT_CHARTINFO_MODEL){
                         case 0: ms = 2;break;
                         case 1: ms = 4;break;
                         case 2: ms =6 ;break;
@@ -601,7 +603,7 @@ int64_t getAudioTime()// 获取相对于音乐播放的时间
     return getNowMs() - ChartAudioStart;
 }
 
-void audioInit()//音频初始化
+void audioInit()//音频初始化 ，设置了自动循环播放
  {
     if (g_audioInited) return;
     ma_result result;
@@ -961,7 +963,7 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
         CHARTINFO.status = 0;
     }
     
-    if (CHARTINFO.model == 2) CHARTINFO.recall = 100;
+    if (DEFAULT_CHARTINFO_MODEL == 2) CHARTINFO.recall = 100;
     audioInit();
   
     gameOpenRender();
@@ -972,7 +974,7 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
     while (true){
         updateMouse();
 
-        if (CHARTINFO.model == 2 && CHARTINFO.tracklost){
+        if (DEFAULT_CHARTINFO_MODEL == 2 && CHARTINFO.tracklost){
             ma_sound_stop(&sound);
             ma_sound_uninit(&sound);
             goto EXIT;
@@ -999,8 +1001,8 @@ void playChart(const std::string& _chartPath,const std::string& _audioPath )//�
         PLAYRENDER();
         Sleep(8);
     }
-    if (CHARTINFO.model == 1 && CHARTINFO.recall <= 65 ) CHARTINFO.tracklost = true;
-    if (CHARTINFO.model == 0 && CHARTINFO.recall <= 40 ) CHARTINFO.tracklost = true;
+    if (DEFAULT_CHARTINFO_MODEL == 1 && CHARTINFO.recall <= 65 ) CHARTINFO.tracklost = true;
+    if (DEFAULT_CHARTINFO_MODEL == 0 && CHARTINFO.recall <= 40 ) CHARTINFO.tracklost = true;
 
     Sleep(2000);
 

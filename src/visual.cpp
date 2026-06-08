@@ -35,7 +35,7 @@ inline void drawInfo()//供gameOpenRender调用,绘制中央的信息
 
 }
 
-inline void showScore()//供gameOverRender调用，绘制分数
+inline void showScore(int64_t _time)//供gameOverRender调用，绘制分数
 {   
     WORD color = White;
     const int center_x = MARGIN_L + RAIL_WIDTH * 2 + 2 ;
@@ -55,20 +55,21 @@ inline void showScore()//供gameOverRender调用，绘制分数
     else if (CHARTINFO.score >= 8600000) rank =5;
     else rank =6;
 
-
+    if (_time > 1400){
     if (CHARTINFO.tracklost) drawAscii(8 , 2, TL,White);
-    else drawAscii(2,2,TC, White);
+    else  drawAscii(2,2,TC, White); }
 
-    switch(rank){
-        case 0: drawAscii(start_x,start_y,EXp, color);
-        case 1: drawAscii(start_x,start_y,EX, color);
-        case 2: drawAscii(start_x,start_y,AA, color);
-        case 3: drawAscii(start_x +4,start_y,A, color);
-        case 4: drawAscii(start_x +4 ,start_y,B, color);
-        case 5: drawAscii(start_x +4 ,start_y,C, color);
-        case 6: drawAscii(start_x +4,start_y,D, color);
+    if ( _time >= 3000){
+        switch(rank){
+            case 0: drawAscii(start_x,start_y,EXp, color);
+            case 1: drawAscii(start_x,start_y,EX, color);
+            case 2: drawAscii(start_x,start_y,AA, color);
+            case 3: drawAscii(start_x +4,start_y,A, color);
+            case 4: drawAscii(start_x +4 ,start_y,B, color);
+            case 5: drawAscii(start_x +4 ,start_y,C, color);
+            case 6: drawAscii(start_x +4,start_y,D, color);
+        }
     }
-
 
     int x = center_x -6 ; int y  = MARGIN_T + RAIl_HEIGHT - 3;
 
@@ -366,7 +367,7 @@ void gameOverRender()//绘制结束时的效果
         int64_t now = getNowMs();
         if (now>=endbeat+eps) break;
         clearBuffer();
-        showScore();
+        showScore(0);
         render();
         for (line& l :LINE){
           if (l.is_left){
@@ -394,13 +395,16 @@ void gameOverRender()//绘制结束时的效果
     clearBuffer();
 
     audioInit();
+    ma_sound_set_looping(&sound, MA_TRUE);
     if (CHARTINFO.tracklost) audioPlay("sound/tracklost.wav");
     else audioPlay("sound/trackcomplete.wav");
 
+    int64_t start = getNowMs();
     while (true) {
+        int64_t duration = getNowMs() - start;
         if (IS_DOWN(VK_ESCAPE)) goto RETURN;
         clearBuffer();
-        showScore();
+        showScore(duration);
         render();
         Sleep(8);
     }
@@ -460,7 +464,7 @@ void normalChangeRender()//一般转场效果
     while (true){
       int64_t now = getNowMs();
       if (now>=beat) break;
-      clearBuffer();
+      //clearBuffer();
       for (line& l :LINE){
           if (l.is_left){
               int x_pos = l.x - round2int( (beat - now)* v );
@@ -730,6 +734,13 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
             }
         }
 
+
+        //顶部绘制难度 HARD NORMAL EAZY 
+        switch (DEFAULT_CHARTINFO_MODEL){
+            case 1 : drawString(40, 1 , "NORMAL" , Yellow ); break;
+            case 0 : drawString(40, 1 , "EAZY : 增加回忆率恢复速度", Green); break;
+            case 2 : drawString(40 ,1 ,"HARD : 回忆率随时间减少", Red);break;
+        }
         
         //播放右光标停止曲目的音乐
         std::string choosingAudio =  "chart/" + choosingChart.chartname + "/" + choosingChart.soundtrack;
@@ -737,6 +748,7 @@ std::vector<std::string> ChartChoiceRender()//选曲界面->选中的谱面路�
             ma_sound_stop(&sound);
             ma_sound_uninit(&sound);
             audioInit();
+            ma_sound_set_looping(&sound, MA_TRUE);
             audioPlay(choosingAudio);
             chartchange = false ; 
         } 
@@ -852,7 +864,9 @@ void MenuRender() //渲染主界面
     MENU:
     WORD color = White ;
     std::vector<WORD> colorvec = {White , Red , Blue , Yellow ,Green , Magenta} ; 
+
     audioInit();
+    ma_sound_set_looping(&sound, MA_TRUE);
     audioPlay("sound/menu.wav");
 
     const int basey = 10;
@@ -914,10 +928,89 @@ void MenuRender() //渲染主界面
     }
 }
 
-
-
-void SettingRender()
+void SettingRender() //渲染设置界面
 {   
-    drawString(1 ,1 , "setting" , White);
-    if (IS_DOWN(VK_ESCAPE)){ GAMESTATUS = 0 ;normalChangeRender();return;}
+    audioInit();
+    ma_sound_set_looping(&sound, MA_TRUE);
+    audioPlay("sound/menu.wav");
+    std::vector<int> choicevec = {1 , 2, 3}; /*
+    1. 游戏难度设置 HARD NORMAL EASY 
+    2. 流速设置 
+    3. AUTOPLAY 
+    */
+
+    const char* chartype = ">>>";
+    int base_x = MARGIN_L + RAIL_WIDTH * 2 ;
+    int base_y = MARGIN_T;
+    int inter = 25 ; 
+    int deltay = 2;
+
+
+    int index{0};
+    std::vector <int> y ={base_y , base_y+deltay , base_y+deltay*2};
+    int cursor_Y { y[index]};
+
+    while (true){
+        clearBuffer();
+
+        if (IS_DOWN(VK_ESCAPE)) {
+            ma_sound_stop(&sound);
+            ma_sound_uninit(&sound);
+            normalChangeRender();
+            return;
+        }
+
+
+        if (IS_DOWN(VK_UP) && index -1 >=0){
+            index--;
+            cursor_Y = y[index];
+            Sleep(100);
+        }
+
+        if (IS_DOWN(VK_DOWN) && index +1 < y.size()){
+            index++;
+            cursor_Y = y[index];
+            Sleep(100);
+        }
+
+        drawString(40,1,"CONFIG" , White);
+
+        drawString(base_x , base_y , "难度" , White);
+        if ( (0*deltay + base_y) == cursor_Y) {
+            if (IS_DOWN(VK_LEFT) && DEFAULT_CHARTINFO_MODEL -1 >=0)  DEFAULT_CHARTINFO_MODEL -=1 ,Sleep(100);
+            if (IS_DOWN(VK_RIGHT) && DEFAULT_CHARTINFO_MODEL +1 <=2)  DEFAULT_CHARTINFO_MODEL +=1 ,Sleep(100);
+        }
+        switch (DEFAULT_CHARTINFO_MODEL){
+            case 1 : drawString(base_x + inter, base_y, "NORMAL" , Yellow ); break;
+            case 0 : drawString(base_x + inter, base_y, "EAZY", Green); break;
+            case 2 : drawString(base_x + inter, base_y, "HARD", Red);break;
+        }
+        drawString(base_x + inter - 2 , base_y, "<" , White); drawString(base_x + inter + 6 , base_y, ">" , White);
+        
+        drawString(base_x , base_y + deltay , "谱面流速"  ,White);
+        if ((1*deltay + base_y) == cursor_Y){
+            if (IS_DOWN(VK_LEFT)) SPEEDFACTOR-=0.2 ,Sleep(150);
+            if (IS_DOWN(VK_RIGHT)) SPEEDFACTOR+=0.2, Sleep(150);
+        }
+        std::stringstream ss;
+        ss<<SPEEDFACTOR; 
+        drawString(base_x+ inter , base_y+ deltay , ss.str().c_str(), White);
+        drawString(base_x + inter - 2 , base_y+ deltay, "<" , White) ;drawString(base_x + inter + 6 , base_y+deltay, ">" , White);
+
+        drawString(base_x , base_y + deltay*2 , "AUTOPLAY"  ,White);
+        if ((2*deltay + base_y) == cursor_Y){
+            if (IS_DOWN(VK_RIGHT)|| IS_DOWN(VK_LEFT)) AUTOPLAY = !AUTOPLAY ,Sleep(100);
+        }
+        if (AUTOPLAY) drawString(base_x+inter , 2*deltay + base_y, "ON" , White);
+        else drawString(base_x+inter , 2*deltay+ base_y , "OFF" , White);
+        drawString(base_x + inter - 2 , base_y+ deltay*2, "<" , White) ;drawString(base_x + inter + 6 , base_y+deltay*2, ">" , White);
+
+        drawString(base_x - 4 , cursor_Y , chartype , White);
+
+        drawString(1,1,"ESC",White);
+
+        render();
+        Sleep(8);
+    }
+    
 }

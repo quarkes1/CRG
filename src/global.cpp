@@ -17,7 +17,9 @@ const int MARGIN_T = 3; // 轨道距离边界的left right bottom top 间距
 const int RAIL_WIDTH = 6;
 const int RAIl_HEIGHT = 20;
 
-double speed = 0.02 ;
+double speed = basespeed * (SPEEDFACTOR /10) + (SPEEDFACTOR>9? log(SPEEDFACTOR - 9) : 0) ;
+double SPEEDFACTOR = 10 ;
+double basespeed = 0.02;
 
 bool g_audioInited {false};
 
@@ -41,5 +43,6 @@ MouseState MOUSESTATE{};//记录全局鼠标状态；需要每帧更新
 
 HANDLE hInput;
 
+int DEFAULT_CHARTINFO_MODEL {2}; //设置谱面难度，1为正常，0为简单，2为困难
 
 int GAMESTATUS {0} ; //0 进入主界面 ；1 进入play ;2 进入设置

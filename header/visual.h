@@ -9,6 +9,7 @@
 #include <vector>
 #include <ctime>
 #include <windows.h>
+#include <sstream>
 #include "global.h"
 #include "mainf.h"
 #include "ascii.h"

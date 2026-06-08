@@ -10,6 +10,7 @@
 
 #include <windows.h>
 #include <cstdint>
+#include <cmath>
 #include "json.hpp"
 #include "mainf.h"
 
@@ -79,3 +80,7 @@ struct MouseState
 extern MouseState MOUSESTATE;
 extern HANDLE hInput;
 extern int GAMESTATUS ;
+extern int DEFAULT_CHARTINFO_MODEL;
+extern double SPEEDFACTOR;
+extern double basespeed;
+
