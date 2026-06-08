@@ -8,7 +8,7 @@
 
 ## 目前需要填的坑
 
-- 设置判定难度，键位绑定 ，流速等调节
+- 更详细的设置
 - 局域网linkplay
 
 ### 本游戏已经导入了部分Malody的初始谱面。若下载了Malody <a href="https://m.mugzone.net/wiki/1?lang=sc">官网下载</a> ，可以直接导入游戏内的谱面
